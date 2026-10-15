@@ -1,6 +1,7 @@
 // Lightweight i18n: English + Hindi. Add keys to both dictionaries.
 import { useSyncExternalStore } from "react";
 
+import { hi as hiCatalog, hiPatterns } from "@/src/i18n-hi";
 import { storage } from "@/src/utils/storage";
 
 const en = {
@@ -139,4 +140,22 @@ const subscribe = (l: () => void) => {
 export function useI18n() {
   const current = useSyncExternalStore(subscribe, () => lang, () => lang);
   return { lang: current, t: (k: TKey) => dicts[current][k] ?? en[k] };
+}
+
+// Translate an English source string. English is the fallback for anything not in the catalogue.
+export function translate(language: Lang, text: string): string {
+  if (language !== "hi" || !text) return text;
+  const key = text.trim();
+  const hit = hiCatalog[key];
+  if (hit) return text.replace(key, hit);
+  for (const [rx, fn] of hiPatterns) {
+    const m = key.match(rx);
+    if (m) return text.replace(key, fn(m));
+  }
+  return text;
+}
+
+export function useTx() {
+  const { lang: current } = useI18n();
+  return (text?: string) => (text === undefined ? text : translate(current, text));
 }

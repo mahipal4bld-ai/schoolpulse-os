@@ -1,0 +1,80 @@
+{
+  "verified_at": "2026-10-15T10:12:54.867405+00:00",
+  "backup": "/app/backups/20261015T101253Z",
+  "restored_db": "test_database_restore_verify",
+  "result": "PASS",
+  "mismatched_sections": [],
+  "counts": {
+    "schools": 6,
+    "users": 24,
+    "memberships": 18,
+    "academic_years": 2,
+    "classes": 11,
+    "sections": 22,
+    "subjects": 12,
+    "teachers": 16,
+    "teacher_assignments": 30,
+    "students": 128,
+    "guardians": 132,
+    "guardian_links": 134,
+    "files": 17,
+    "invitations": 2,
+    "audit_logs": 877
+  },
+  "schools": {
+    "edge-1fba22": {
+      "students": 0,
+      "teachers": 0,
+      "assignments": 0,
+      "guardian_links_verified": 0,
+      "brand_primary": "#0A192F",
+      "files": 0,
+      "roles": 1
+    },
+    "edge-7e3f52": {
+      "students": 0,
+      "teachers": 0,
+      "assignments": 0,
+      "guardian_links_verified": 0,
+      "brand_primary": "#0A192F",
+      "files": 0,
+      "roles": 1
+    },
+    "greenfield-public": {
+      "students": 50,
+      "teachers": 6,
+      "assignments": 13,
+      "guardian_links_verified": 41,
+      "brand_primary": "#14532D",
+      "files": 17,
+      "roles": 7
+    },
+    "sunrise-valley": {
+      "students": 78,
+      "teachers": 10,
+      "assignments": 17,
+      "guardian_links_verified": 63,
+      "brand_primary": "#9A3412",
+      "files": 0,
+      "roles": 7
+    },
+    "test-a284d7": {
+      "students": 0,
+      "teachers": 0,
+      "assignments": 0,
+      "guardian_links_verified": 0,
+      "brand_primary": "#0A192F",
+      "files": 0,
+      "roles": 1
+    },
+    "test-d7406d": {
+      "students": 0,
+      "teachers": 0,
+      "assignments": 0,
+      "guardian_links_verified": 0,
+      "brand_primary": "#0A192F",
+      "files": 0,
+      "roles": 1
+    }
+  }
+}

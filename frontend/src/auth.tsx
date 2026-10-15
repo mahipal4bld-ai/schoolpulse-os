@@ -8,6 +8,7 @@ import { storage } from "@/src/utils/storage";
 
 const TOKEN_KEY = "sp_token";
 const SCHOOL_KEY = "sp_school";
+const REFRESH_KEY = "sp_refresh";
 
 type Status = "loading" | "signedOut" | "signedIn";
 
@@ -64,8 +65,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const clear = useCallback(async () => {
     session.setToken(null);
+    session.setRefreshToken(null);
     session.setSchool(null);
     await storage.secureRemove(TOKEN_KEY);
+    await storage.secureRemove(REFRESH_KEY);
     await storage.removeItem(SCHOOL_KEY);
     queryClient.clear();
     setMe(null);
@@ -77,10 +80,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     session.onUnauthorized(() => {
       clear();
     });
+    session.onTokens((a, r) => {
+      storage.secureSet(TOKEN_KEY, a);
+      storage.secureSet(REFRESH_KEY, r);
+    });
+    session.onSchoolInactive(() => {
+      // Suspended tenant: re-read memberships (server hides suspended schools) so routing moves away.
+      api<Me>("/auth/me", { noSchool: true })
+        .then((d) => applyMe(d, session.getSchool()))
+        .catch(() => {});
+    });
     (async () => {
       const token = await storage.secureGet(TOKEN_KEY, null);
       if (!token || typeof token !== "string") return setStatus("signedOut");
       session.setToken(token);
+      const rt = await storage.secureGet(REFRESH_KEY, null);
+      session.setRefreshToken(typeof rt === "string" ? rt : null);
       try {
         const data = await api<Me>("/auth/me", { noSchool: true });
         await applyMe(data, (await storage.getItem(SCHOOL_KEY, null)) as string | null);
@@ -92,9 +107,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [applyMe, clear]);
 
   const finishLogin = useCallback(
-    async (res: Me & { access_token: string }) => {
+    async (res: Me & { access_token: string; refresh_token: string }) => {
       session.setToken(res.access_token);
+      session.setRefreshToken(res.refresh_token);
       await storage.secureSet(TOKEN_KEY, res.access_token);
+      await storage.secureSet(REFRESH_KEY, res.refresh_token);
       queryClient.clear();
       await applyMe(res, null);
       return res;

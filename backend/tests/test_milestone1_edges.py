@@ -61,8 +61,8 @@ class TestAuthEdges:
         assert r.status_code == 422
 
     def test_logout_all_revokes_all_sessions(self):
-        tok1, _ = login("teacher@sunrise.demo")
-        tok2, _ = login("teacher@sunrise.demo")
+        tok1, _ = login("accountant@greenfield.demo")
+        tok2, _ = login("accountant@greenfield.demo")
         r = requests.post(f"{API}/auth/logout-all", headers=hdr(tok1))
         assert r.status_code == 200
         assert requests.get(f"{API}/auth/me", headers=hdr(tok1)).status_code == 401

@@ -7,7 +7,9 @@ from pymongo.errors import DuplicateKeyError
 from starlette.middleware.cors import CORSMiddleware
 
 import storage
-from core import DEMO_MODE, client, ensure_indexes
+from core import APP_ENV, DEMO_MODE, assert_safe_config, client, ensure_indexes
+
+assert_safe_config()  # blocks startup if production is configured with demo auth
 from routes_auth import router as auth_router
 from routes_directory import router as directory_router
 from routes_school import router as school_router
@@ -48,7 +50,9 @@ app.add_middleware(CORSMiddleware, allow_credentials=False, allow_origins=["*"],
 @app.on_event("startup")
 async def startup():
     await ensure_indexes()
+    logger.info(f"APP_ENV={APP_ENV} DEMO_MODE={DEMO_MODE}")
     if DEMO_MODE:
+        logger.warning("DEMO MODE ENABLED: demo picker + fictional seed active. Never use in production.")
         from seed import seed
         await seed()
         logger.info("Demo seed ensured")

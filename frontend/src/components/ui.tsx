@@ -16,6 +16,7 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
+import { useTx } from "@/src/i18n";
 import { fonts, makeStyles, radius, spacing, type, useTheme } from "@/src/theme";
 
 // ------------------------------------------------------------ Text
@@ -24,9 +25,15 @@ export function Txt({
   variant = "body",
   color,
   style,
+  raw,
+  children,
   ...rest
-}: TextProps & { variant?: Variant; color?: string }) {
+}: TextProps & { variant?: Variant; color?: string; raw?: boolean }) {
   const { colors } = useTheme();
+  const tx = useTx();
+  // Central i18n: plain string children are looked up in the catalogue (raw = user data, never translated).
+  const tr = (c: React.ReactNode) => (typeof c === "string" && !raw ? tx(c) : c);
+  const content = Array.isArray(children) ? children.map(tr) : tr(children);
   const v = {
     display: { fontSize: type.display, fontFamily: fonts.medium, letterSpacing: -0.6, lineHeight: 36 },
     title: { fontSize: type.xxl, fontFamily: fonts.medium, letterSpacing: -0.4, lineHeight: 30 },
@@ -37,7 +44,11 @@ export function Txt({
     overline: { fontSize: 11, fontFamily: fonts.medium, letterSpacing: 1, lineHeight: 14, textTransform: "uppercase" as const },
   }[variant];
   const defaultColor = variant === "caption" || variant === "overline" ? colors.muted : colors.onSurface;
-  return <Text {...rest} style={[v, { color: color ?? defaultColor }, style]} />;
+  return (
+    <Text {...rest} style={[v, { color: color ?? defaultColor }, style]}>
+      {content}
+    </Text>
+  );
 }
 
 // ------------------------------------------------------------ Button
@@ -125,6 +136,7 @@ export function Field({
 }: TextInputProps & { label: string; error?: string; hint?: string }) {
   const { colors } = useTheme();
   const styles = useStyles();
+  const tx = useTx();
   const [focus, setFocus] = React.useState(false);
   return (
     <View style={{ gap: spacing.xs + 2 }}>
@@ -134,6 +146,7 @@ export function Field({
       <TextInput
         placeholderTextColor={colors.muted}
         {...props}
+        placeholder={tx(props.placeholder)}
         onFocus={(e) => {
           setFocus(true);
           props.onFocus?.(e);

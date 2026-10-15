@@ -1,5 +1,8 @@
 """SchoolPulse OS core: DB, models helpers, auth, tenancy, permissions, audit."""
+import hashlib
+import hmac
 import os
+import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -21,8 +24,22 @@ db = client[os.environ["DB_NAME"]]
 
 JWT_SECRET = os.environ["JWT_SECRET"]
 JWT_ALG = "HS256"
-JWT_HOURS = int(os.environ["JWT_EXPIRES_HOURS"])
-DEMO_MODE = os.environ.get("DEMO_MODE", "false").lower() == "true"
+ACCESS_MINUTES = int(os.environ.get("ACCESS_TOKEN_MINUTES", "15"))
+REFRESH_DAYS = int(os.environ.get("REFRESH_TOKEN_DAYS", "30"))
+# Safe defaults: production unless told otherwise, demo OFF unless explicitly enabled.
+APP_ENV = os.environ.get("APP_ENV", "production").strip().lower()
+DEMO_MODE = os.environ.get("DEMO_MODE", "false").strip().lower() == "true"
+
+
+class UnsafeConfigError(RuntimeError):
+    pass
+
+
+def assert_safe_config():
+    """Blocking startup check: demo authentication must never run in production."""
+    if APP_ENV == "production" and DEMO_MODE:
+        raise UnsafeConfigError("UNSAFE CONFIG: DEMO_MODE=true is not allowed when APP_ENV=production. "
+                                "Set DEMO_MODE=false (or APP_ENV=staging/development for demos).")
 
 
 def now_utc() -> datetime:
@@ -96,15 +113,50 @@ def verify_password(pw: str, hashed: str) -> bool:
         return False
 
 
-async def create_session(user_id: str, user_agent: str = "") -> str:
-    jti = uuid.uuid4().hex
-    exp = now_utc() + timedelta(hours=JWT_HOURS)
-    await db.sessions.insert_one(
-        {"jti": jti, "user_id": user_id, "created_at": now_utc(), "expires_at": exp,
-         "revoked": False, "user_agent": user_agent[:200]}
-    )
-    return jwt.encode({"sub": user_id, "jti": jti, "iat": now_utc(), "exp": exp, "typ": "access"},
-                      JWT_SECRET, algorithm=JWT_ALG)
+def _hash_refresh(token: str) -> str:
+    return hmac.new(JWT_SECRET.encode(), token.encode(), hashlib.sha256).hexdigest()
+
+
+def _access_jwt(user_id: str, sid: str) -> str:
+    t = now_utc()
+    return jwt.encode({"sub": user_id, "jti": sid, "iat": t, "exp": t + timedelta(minutes=ACCESS_MINUTES),
+                       "typ": "access"}, JWT_SECRET, algorithm=JWT_ALG)
+
+
+def _tokens(user_id: str, sid: str, refresh: str) -> dict:
+    return {"access_token": _access_jwt(user_id, sid), "refresh_token": refresh, "token_type": "bearer",
+            "expires_in": ACCESS_MINUTES * 60, "session_id": sid}
+
+
+async def create_session(user_id: str, user_agent: str = "", ip: str = "") -> dict:
+    """New device session: short-lived access JWT + opaque rotating refresh token (stored hashed)."""
+    sid = uuid.uuid4().hex
+    refresh = secrets.token_urlsafe(48)
+    t = now_utc()
+    await db.sessions.insert_one({
+        "jti": sid, "user_id": user_id, "refresh_hash": _hash_refresh(refresh), "prev_refresh_hashes": [],
+        "created_at": t, "last_used_at": t, "expires_at": t + timedelta(days=REFRESH_DAYS), "rotations": 0,
+        "revoked": False, "revoked_reason": None, "user_agent": user_agent[:200], "ip": ip[:64]})
+    return _tokens(user_id, sid, refresh)
+
+
+async def rotate_refresh(refresh: str, ip: str = "") -> dict:
+    h = _hash_refresh(refresh)
+    new = secrets.token_urlsafe(48)
+    t = now_utc()
+    s = await db.sessions.find_one_and_update(
+        {"refresh_hash": h, "revoked": False, "expires_at": {"$gt": t}},
+        {"$set": {"refresh_hash": _hash_refresh(new), "last_used_at": t, "last_ip": ip[:64]},
+         "$push": {"prev_refresh_hashes": {"$each": [h], "$slice": -20}}, "$inc": {"rotations": 1}})
+    if s:
+        return _tokens(s["user_id"], s["jti"], new)
+    reused = await db.sessions.find_one({"prev_refresh_hashes": h})
+    if reused and not reused.get("revoked"):
+        await db.sessions.update_one({"_id": reused["_id"]}, {"$set": {
+            "revoked": True, "revoked_reason": "refresh_token_reuse", "revoked_at": t}})
+        await audit(reused["user_id"], "auth.refresh_reuse_detected", "session", reused["jti"], meta={"ip": ip})
+        raise HTTPException(401, "Refresh token reuse detected. Session revoked; please sign in again.")
+    raise HTTPException(401, "Invalid or expired refresh token")
 
 
 async def _user_from_token(token: Optional[str]) -> dict:
@@ -113,8 +165,12 @@ async def _user_from_token(token: Optional[str]) -> dict:
         raise err
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALG])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(401, "Access token expired")
     except jwt.InvalidTokenError:
         raise HTTPException(401, "Invalid or expired session")
+    if payload.get("typ") != "access":
+        raise err
     session = await db.sessions.find_one({"jti": payload.get("jti"), "revoked": False})
     if not session:
         raise HTTPException(401, "Session revoked")
@@ -220,6 +276,11 @@ async def ensure_indexes():
     await db.users.create_index("email", unique=True)
     await db.memberships.create_index([("user_id", 1), ("school_id", 1)], unique=True)
     await db.sessions.create_index("jti", unique=True)
+    await db.sessions.create_index("refresh_hash", sparse=True)
+    await db.sessions.create_index("prev_refresh_hashes")
+    await db.sessions.create_index([("user_id", 1), ("revoked", 1)])
+    await db.login_limits.create_index("key", unique=True)
+    await db.login_limits.create_index("expires_at", expireAfterSeconds=0)
     await db.schools.create_index("slug", unique=True)
     await db.academic_years.create_index([("school_id", 1), ("name", 1)], unique=True)
     await db.classes.create_index([("school_id", 1), ("academic_year_id", 1), ("name", 1)], unique=True)

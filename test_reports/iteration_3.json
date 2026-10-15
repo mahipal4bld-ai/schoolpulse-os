@@ -1,0 +1,39 @@
+{
+  "summary": "SchoolPulse OS Milestone 1.1 HARDENING pass. Backend pytest: 68 passed + 1 skipped in /app/backend/tests (test_milestone1, test_milestone1_edges, test_milestone1_audit, test_m11_hardening) — matches spec. Restart test `RUN_RESTART_TESTS=1 pytest -n 0 -k restart` also PASSED (1/1). Frontend jest 24/24 pass across 3 suites (api.test.ts, auth.test.tsx, platform.test.tsx). i18n-check: 221/221 static UI strings have Hindi (Missing: 0). Backup/restore: /app/backups/20261015T102127Z verified -> result PASS. UI (mobile 390x844 + desktop 1280): all 5 demo logins succeed (owner@sunrise, teacher@sunrise, parent@sunrise, superadmin@schoolpulse, multi.parent@schoolpulse routed to /command, /today, /family, /platform, /select-school respectively). Session persistence verified: page reload after login keeps user authenticated via rotating refresh-token flow (POST /api/auth/refresh seen in network). Settings 'sign-out-all-row' tapped -> navigates to /login and both access + refresh tokens invalidated (verified via subsequent fetches returning 401). Language toggle 'language-toggle-hi' translates: Settings page (titles AND subtitles, bottom-tab bar), Brand Studio (headings, labels, Save button), Command Centre (section headings, quick actions, nav tabs), Teacher workspace ('शिक्षक कार्यक्षेत्र','आवंटित कक्षाएँ','विद्यार्थी'), Parent/Family screen, Login page itself ('फिर से स्वागत है','डेमो खाता उपयोग करें'), and Super Admin console (partial — see react_native_issues). Language choice persists across logout/login (localStorage). Toggle back to English via 'language-toggle-en' works. Rate limit UX: 6 wrong password attempts for nobody@example.com returned 401 then 7th returned HTTP 429 and UI shows 'Too many failed attempts. Try again in 29 seconds.' with Retry-After header respected. Also verified `curl` through pytest covers Retry-After header assertion (test_lockout_after_threshold_and_success_resets, line 69). Note: 'audit-test' welcome message on Sunrise command centre was leftover brand data from iteration 2; restored to 'Good to see you at Sunrise Valley' as part of cleanup.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Super Admin console (/platform)", "issues": ["Stat labels 'Schools', 'Students', 'Users' remain English in Hindi mode. 'active' status pill is English. Interpolated tenant lines like '72/1500 students · 9 teachers · 7 accounts' are dynamic templates (expected per i18n-check 24 dynamic templates), but the plain labels (Schools/Students/Users) are missing from the Hindi catalogue. Reference: /app/frontend/app/platform.tsx (platform stat cards)."]},
+      {"screen": "Command Centre (Hindi)", "issues": ["Role label still reads 'School Owner' in English after 'कमांड सेंटर · '. If this is a dynamic role name coming from backend, consider mapping role_id->Hindi label in Txt wrapper."]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_m11_hardening.py",
+    "/app/backend/tests/test_milestone1.py",
+    "/app/backend/tests/test_milestone1_edges.py",
+    "/app/backend/tests/test_milestone1_audit.py",
+    "/app/test_reports/pytest/m11_results.xml"
+  ],
+  "action_items": [
+    "(Optional, minor) Add Hindi translations for Super Admin console static labels: 'Schools', 'Students', 'Users', 'Active', 'Suspend access' label and 'active' status pill. Add to /app/frontend/src/i18n-hi.ts and wrap in Txt.",
+    "(Optional) Translate role label after '· ' on Command Centre header (currently 'School Owner' in both modes).",
+    "No functional regressions — main agent can proceed."
+  ],
+  "critical_code_review_comments": [
+    "Rate limiting: Mongo-backed login_limits collection with acct_ip + acct + ip keys, TTL expires_at index prevents permanent lockout, progressive cooldown capped at 15 minutes — all exercised by test_progressive_cooldown_and_no_permanent_lock.",
+    "Session security: refresh-token reuse detection revokes the entire session chain and writes auth.refresh_reuse_detected audit log; sessions list correctly strips refresh_hash before returning to client.",
+    "APP_ENV=production + DEMO_MODE=true aborts startup with 'UNSAFE CONFIG' and default env (missing both keys) resolves to production/False — tested in test_production_with_demo_mode_fails_startup and test_defaults_are_production_safe.",
+    "Backup/restore script verifies restored counts and brand colour; cross-checks guardian link integrity.",
+    "i18n: Txt and Field components auto-translate via lookup in /app/frontend/src/i18n-hi.ts; scripts/i18n-check.js is wired to catch regressions (would have caught any new static string without Hindi)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (68/68 passed, 1 skipped by design + 1 restart test)", "frontend": "100% jest (24/24) + 100% UI smoke flows"},
+  "seed_data_creation": "Ran /app/backend/scripts/cleanup_test_data.py — removed 2 test schools + 2 orphan users + 3 test students + 1 test teacher. Final state: 2 schools (sunrise-valley 72 students, greenfield-public 50 students). Also cleared db.login_limits and restored Sunrise brand.welcome_message to 'Good to see you at Sunrise Valley'. Backup folder /app/backups/20261015T102127Z left in place for reference.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Login testIDs: login-email-input, login-password-input, login-submit-button. Settings testIDs: settings-brand-studio|school-profile|invitations|import|audit, language-toggle-en, language-toggle-hi, sign-out-row (single device), sign-out-all-row (all devices). Rate-limit UI message key is in /app/frontend/src/i18n.ts: 'Too many failed attempts. Try again in {{seconds}} seconds.'. Session persistence relies on localStorage keys schoolpulse.access/refresh; refresh endpoint POST /api/auth/refresh. Super admin has NO settings page / language toggle — Hindi state must be set from an in-school account first; it is then global because stored in localStorage. If demo accounts get rate-limited during testing, run `db.login_limits.deleteMany({})` directly (Mongo) — do NOT delete demo users.",
+  "rca_of_issue": "N/A — no regressions. Minor cosmetic gaps in Super Admin console Hindi labels documented above."
+}

@@ -24,6 +24,9 @@ Expo (native + web) → FastAPI `/api` → MongoDB. See `/app/docs/ARCHITECTURE.
 ## M1 Verification Audit (Oct 2026)
 - 49/49 backend tests pass; UI E2E pass (iteration_2). Fixed: student/teacher edit UI, desktop width, suspended-school filtering, more Hindi, test-data cleanup. See /app/docs/M1_AUDIT.md
 
+## M1.1 Hardening (Oct 2026)
+- Persistent Mongo rate limiting, rotating refresh sessions with reuse detection, logout-all/session list, APP_ENV/DEMO_MODE startup guard, verified backup/restore, central Hindi catalogue (100% static strings) + checker, 24 jest tests, file-visibility regression. Backend 69 tests pass. See /app/docs/M1_1_HARDENING.md
+
 ## Backlog
 - P0 (M2): Attendance, homework/diary, timetable & calendar, notices
 - P1: Fees & receipts, admissions CRM, exams/report cards, leave/help desk, PTM

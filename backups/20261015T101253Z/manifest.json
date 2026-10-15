@@ -1,0 +1,182 @@
+{
+  "created_at": "20261015T101253Z",
+  "source_db": "test_database",
+  "fingerprint": {
+    "counts": {
+      "schools": 6,
+      "users": 24,
+      "memberships": 18,
+      "academic_years": 2,
+      "classes": 11,
+      "sections": 22,
+      "subjects": 12,
+      "teachers": 16,
+      "teacher_assignments": 30,
+      "students": 128,
+      "guardians": 132,
+      "guardian_links": 134,
+      "files": 17,
+      "invitations": 2,
+      "audit_logs": 877
+    },
+    "schools": {
+      "edge-1fba22": {
+        "brand": {
+          "primary": "#0A192F",
+          "secondary": "#0D9488",
+          "logo_file_id": null,
+          "banner_file_id": null,
+          "monogram": "ET",
+          "logo_style": "circle",
+          "welcome_message": "Welcome to Edge Test School"
+        },
+        "name": "Edge Test School",
+        "status": "active",
+        "students": 0,
+        "teachers": 0,
+        "guardian_links_verified": 0,
+        "assignments": 0,
+        "files": [],
+        "roles": [
+          "6ad0a721eb8a007e08f4b3f9:owner"
+        ]
+      },
+      "edge-7e3f52": {
+        "brand": {
+          "primary": "#0A192F",
+          "secondary": "#0D9488",
+          "logo_file_id": null,
+          "banner_file_id": null,
+          "monogram": "ET",
+          "logo_style": "circle",
+          "welcome_message": "Welcome to Edge Test School"
+        },
+        "name": "Edge Test School",
+        "status": "active",
+        "students": 0,
+        "teachers": 0,
+        "guardian_links_verified": 0,
+        "assignments": 0,
+        "files": [],
+        "roles": [
+          "6ad0a6f63c0ae4c0fe53037e:owner"
+        ]
+      },
+      "greenfield-public": {
+        "brand": {
+          "primary": "#14532D",
+          "secondary": "#65A30D",
+          "logo_file_id": null,
+          "banner_file_id": null,
+          "monogram": "GP",
+          "logo_style": "circle",
+          "welcome_message": "Welcome to Greenfield"
+        },
+        "name": "Greenfield Public School",
+        "status": "active",
+        "students": 50,
+        "teachers": 6,
+        "guardian_links_verified": 41,
+        "assignments": 13,
+        "files": [
+          "schoolpulse-os/schools/6ad09c1b1aad3ba7d4fb3b0f/brand/038247fc7b5f49ffba33806091c02e64.png",
+          "schoolpulse-os/schools/6ad09c1b1aad3ba7d4fb3b0f/brand/17b203ab452e46dd99bed8fc3bf455c3.png",
+          "schoolpulse-os/schools/6ad09c1b1aad3ba7d4fb3b0f/brand/1a26686c2cb14cbea868d6476157bc08.png",
+          "schoolpulse-os/schools/6ad09c1b1aad3ba7d4fb3b0f/brand/2972c50b22a64d5aa0e04488b3a9dc5d.png",
+          "schoolpulse-os/schools/6ad09c1b1aad3ba7d4fb3b0f/brand/2ec2ff6921ca4f729d46d302347f8b3e.png",
+          "schoolpulse-os/schools/6ad09c1b1aad3ba7d4fb3b0f/brand/4bc8a341b720441fad1b045bc48d1d46.png",
+          "schoolpulse-os/schools/6ad09c1b1aad3ba7d4fb3b0f/brand/5966ea71b27f463398e949e88d0bb8d8.png",
+          "schoolpulse-os/schools/6ad09c1b1aad3ba7d4fb3b0f/brand/5c37ff6f264d44948c73d3a63605e285.png",
+          "schoolpulse-os/schools/6ad09c1b1aad3ba7d4fb3b0f/brand/6af1beb824954f5289c1f47cf209bc5c.png",
+          "schoolpulse-os/schools/6ad09c1b1aad3ba7d4fb3b0f/brand/8814669a05144ab797aa21918e369210.png",
+          "schoolpulse-os/schools/6ad09c1b1aad3ba7d4fb3b0f/brand/b372b044c5684497a784d6c925528402.png",
+          "schoolpulse-os/schools/6ad09c1b1aad3ba7d4fb3b0f/brand/b576bb22c99a490da1e8c44e7f393903.png",
+          "schoolpulse-os/schools/6ad09c1b1aad3ba7d4fb3b0f/brand/d107c4e00bf844e8a2c8d591ee77ca2f.png",
+          "schoolpulse-os/schools/6ad09c1b1aad3ba7d4fb3b0f/brand/d8081633b4674a4887caf654c6196a4d.png",
+          "schoolpulse-os/schools/6ad09c1b1aad3ba7d4fb3b0f/brand/eb1d6e9a85b14d68b3d9f6860814584e.png",
+          "schoolpulse-os/schools/6ad09c1b1aad3ba7d4fb3b0f/brand/ebd1e8dc48c8432197a2268768724ae4.png",
+          "schoolpulse-os/schools/6ad09c1b1aad3ba7d4fb3b0f/brand/fd93a0b5281049b68aa8ec4cfaa1bf46.png"
+        ],
+        "roles": [
+          "6ad09c1a2ffc616d328eb026:parent",
+          "6ad09c1b2ffc616d328eb163:owner",
+          "6ad09c1b2ffc616d328eb168:principal",
+          "6ad09c1c2ffc616d328eb16d:school_admin",
+          "6ad09c1c2ffc616d328eb172:accountant",
+          "6ad09c1c2ffc616d328eb17e:teacher",
+          "6ad09c1c2ffc616d328eb189:parent"
+        ]
+      },
+      "sunrise-valley": {
+        "brand": {
+          "primary": "#9A3412",
+          "secondary": "#D97706",
+          "logo_file_id": null,
+          "banner_file_id": null,
+          "monogram": "SV",
+          "logo_style": "shield",
+          "welcome_message": "audit-test"
+        },
+        "name": "Sunrise Valley Academy",
+        "status": "active",
+        "students": 78,
+        "teachers": 10,
+        "guardian_links_verified": 63,
+        "assignments": 17,
+        "files": [],
+        "roles": [
+          "6ad09c1a2ffc616d328eb026:parent",
+          "6ad09c1a2ffc616d328eb02b:owner",
+          "6ad09c1a2ffc616d328eb030:principal",
+          "6ad09c1a2ffc616d328eb035:school_admin",
+          "6ad09c1a2ffc616d328eb03a:accountant",
+          "6ad09c1b2ffc616d328eb046:teacher",
+          "6ad09c1b2ffc616d328eb053:parent"
+        ]
+      },
+      "test-a284d7": {
+        "brand": {
+          "primary": "#0A192F",
+          "secondary": "#0D9488",
+          "logo_file_id": null,
+          "banner_file_id": null,
+          "monogram": "TT",
+          "logo_style": "circle",
+          "welcome_message": "Welcome to Test Tenant School"
+        },
+        "name": "Test Tenant School",
+        "status": "active",
+        "students": 0,
+        "teachers": 0,
+        "guardian_links_verified": 0,
+        "assignments": 0,
+        "files": [],
+        "roles": [
+          "6ad0a70beb8a007e08f4b32d:owner"
+        ]
+      },
+      "test-d7406d": {
+        "brand": {
+          "primary": "#0A192F",
+          "secondary": "#0D9488",
+          "logo_file_id": null,
+          "banner_file_id": null,
+          "monogram": "TT",
+          "logo_style": "circle",
+          "welcome_message": "Welcome to Test Tenant School"
+        },
+        "name": "Test Tenant School",
+        "status": "active",
+        "students": 0,
+        "teachers": 0,
+        "guardian_links_verified": 0,
+        "assignments": 0,
+        "files": [],
+        "roles": [
+          "6ad0a6df3c0ae4c0fe5302a1:owner"
+        ]
+      }
+    },
+    "relationship_hash": "b19e6cebec65537419a224f28a550a44e219e8702b5f6f48e324c847ece2e994"
+  }
+}

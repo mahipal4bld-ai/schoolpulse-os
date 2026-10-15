@@ -1,20 +1,18 @@
 """Authentication: login, logout (session revocation), me, demo accounts, invitations."""
 import secrets
-import time
-from collections import defaultdict
 from datetime import timedelta
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr, Field
 
+import ratelimit
 from core import (DEMO_MODE, PERMISSIONS, ROLES, Ctx, audit, create_session, current_user, db,
-                  hash_password, need, now_utc, oid, out, verify_password)
+                  hash_password, need, now_utc, oid, out, rotate_refresh, verify_password)
 
 router = APIRouter()
 
-_FAILS: dict[str, list[float]] = defaultdict(list)  # in-memory brute-force guard (per process)
-MAX_FAILS, WINDOW = 5, 15 * 60
+_DUMMY_HASH = hash_password("timing-equaliser-not-a-password")
 
 
 class LoginIn(BaseModel):
@@ -53,33 +51,65 @@ def public_school(s: dict) -> dict:
 @router.post("/auth/login")
 async def login(body: LoginIn, request: Request):
     email = body.email.lower()
-    now = time.time()
-    _FAILS[email] = [t for t in _FAILS[email] if now - t < WINDOW]
-    if len(_FAILS[email]) >= MAX_FAILS:
-        raise HTTPException(429, "Too many failed attempts. Try again in 15 minutes.")
+    ip = ratelimit.client_ip(request)
+    await ratelimit.check(email, ip)
     user = await db.users.find_one({"email": email})
-    if not user or user.get("status") != "active" or not verify_password(body.password, user["password_hash"]):
-        _FAILS[email].append(now)
+    ok = verify_password(body.password, user["password_hash"] if user else _DUMMY_HASH)
+    if not user or user.get("status") != "active" or not ok:
+        await ratelimit.record_failure(email, ip)
+        await audit(str(user["_id"]) if user else None, "auth.login_failed", "user", None, meta={"ip": ip})
         raise HTTPException(401, "Incorrect email or password")
-    _FAILS.pop(email, None)
-    token = await create_session(str(user["_id"]), request.headers.get("user-agent", ""))
-    await audit(str(user["_id"]), "auth.login", "user", str(user["_id"]))
-    return {"access_token": token, "token_type": "bearer", **(await build_me(user))}
+    await ratelimit.record_success(email, ip)
+    tokens = await create_session(str(user["_id"]), request.headers.get("user-agent", ""), ip)
+    await audit(str(user["_id"]), "auth.login", "session", tokens["session_id"], meta={"ip": ip})
+    return {**tokens, **(await build_me(user))}
+
+
+class RefreshIn(BaseModel):
+    refresh_token: str = Field(min_length=20, max_length=200)
+
+
+@router.post("/auth/refresh")
+async def refresh(body: RefreshIn, request: Request):
+    return await rotate_refresh(body.refresh_token, ratelimit.client_ip(request))
+
+
+async def _revoke(filt: dict, reason: str) -> int:
+    r = await db.sessions.update_many({**filt, "revoked": False},
+                                      {"$set": {"revoked": True, "revoked_reason": reason, "revoked_at": now_utc()}})
+    return r.modified_count
 
 
 @router.post("/auth/logout")
 async def logout(user: dict = Depends(current_user)):
-    await db.sessions.update_one({"jti": user["_jti"]}, {"$set": {"revoked": True, "revoked_at": now_utc()}})
-    await audit(str(user["_id"]), "auth.logout", "user", str(user["_id"]))
+    await _revoke({"jti": user["_jti"]}, "logout")
+    await audit(str(user["_id"]), "auth.logout", "session", user["_jti"])
     return {"ok": True}
 
 
 @router.post("/auth/logout-all")
 async def logout_all(user: dict = Depends(current_user)):
-    r = await db.sessions.update_many({"user_id": str(user["_id"]), "revoked": False},
-                                      {"$set": {"revoked": True, "revoked_at": now_utc()}})
-    await audit(str(user["_id"]), "auth.logout_all", "user", str(user["_id"]))
-    return {"ok": True, "revoked": r.modified_count}
+    n = await _revoke({"user_id": str(user["_id"])}, "logout_all")
+    await audit(str(user["_id"]), "auth.logout_all", "user", str(user["_id"]), meta={"revoked": n})
+    return {"ok": True, "revoked": n}
+
+
+@router.get("/auth/sessions")
+async def list_sessions(user: dict = Depends(current_user)):
+    docs = await db.sessions.find({"user_id": str(user["_id"]), "revoked": False, "expires_at": {"$gt": now_utc()}}
+                                  ).sort("last_used_at", -1).to_list(50)
+    return {"items": [{"id": d["jti"], "created_at": out(d)["created_at"], "last_used_at": out(d).get("last_used_at"),
+                       "user_agent": d.get("user_agent"), "ip": d.get("ip"), "current": d["jti"] == user["_jti"]}
+                      for d in docs]}
+
+
+@router.delete("/auth/sessions/{sid}")
+async def revoke_session(sid: str, user: dict = Depends(current_user)):
+    n = await _revoke({"jti": sid, "user_id": str(user["_id"])}, "revoked_by_user")
+    if not n:
+        raise HTTPException(404, "Active session not found")
+    await audit(str(user["_id"]), "auth.session_revoke", "session", sid)
+    return {"ok": True}
 
 
 @router.get("/auth/me")
@@ -178,8 +208,8 @@ async def accept_invite(body: AcceptIn, request: Request):
                                      upsert=True)
     await db.invitations.update_one({"_id": inv["_id"]}, {"$set": {"status": "accepted", "accepted_at": now_utc()}})
     await audit(uid, "invitation.accept", "invitation", str(inv["_id"]), inv["school_id"])
-    token = await create_session(uid, request.headers.get("user-agent", ""))
-    return {"access_token": token, "token_type": "bearer", **(await build_me(user))}
+    tokens = await create_session(uid, request.headers.get("user-agent", ""), ratelimit.client_ip(request))
+    return {**tokens, **(await build_me(user))}
 
 
 assert set(PERMISSIONS) == set(ROLES)

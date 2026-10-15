@@ -62,6 +62,21 @@ export function AccountPanel() {
           />
         ) : null}
         <Row
+          testID="sign-out-all-row"
+          icon={
+            <IconTile tone={colors.errorSoft}>
+              <SignOut size={18} color={colors.error} />
+            </IconTile>
+          }
+          title="Sign out of all devices"
+          subtitle="Revokes every active session for this account"
+          onPress={async () => {
+            await api("/auth/logout-all", { method: "POST", noSchool: true }).catch(() => {});
+            await logout();
+            router.replace("/login");
+          }}
+        />
+        <Row
           testID="sign-out-row"
           last
           icon={
