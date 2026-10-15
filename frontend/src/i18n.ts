@@ -47,6 +47,14 @@ const en = {
   assignedClasses: "Assigned classes",
   recentActivity: "Recent activity",
   commandCentre: "Command Centre",
+  schoolOverview: "School overview",
+  quickActions: "Quick actions",
+  studentsByClass: "Students by class",
+  liveFromRecords: "Live from records",
+  addStudent: "Add a student",
+  academicSetup: "Academic setup",
+  directory: "Student & staff directory",
+  school: "School",
 };
 
 const hi: typeof en = {
@@ -93,6 +101,14 @@ const hi: typeof en = {
   assignedClasses: "आवंटित कक्षाएँ",
   recentActivity: "हाल की गतिविधि",
   commandCentre: "कमांड सेंटर",
+  schoolOverview: "स्कूल अवलोकन",
+  quickActions: "त्वरित कार्य",
+  studentsByClass: "कक्षा अनुसार विद्यार्थी",
+  liveFromRecords: "रिकॉर्ड से लाइव",
+  addStudent: "विद्यार्थी जोड़ें",
+  academicSetup: "शैक्षणिक सेटअप",
+  directory: "विद्यार्थी व स्टाफ़ निर्देशिका",
+  school: "स्कूल",
 };
 
 export type Lang = "en" | "hi";

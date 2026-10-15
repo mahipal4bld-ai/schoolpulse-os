@@ -3,7 +3,7 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { LogBox, View } from "react-native";
+import { LogBox, Platform, View } from "react-native";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 
 import { AuthProvider } from "@/src/auth";
@@ -39,7 +39,12 @@ export default function RootLayout() {
           <AuthProvider>
             <ToastProvider>
               <StatusBar style="dark" />
-              <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.surfaceSecondary } }} />
+              {/* Web: constrain to a readable column on desktop; native is unaffected */}
+              <View style={{ flex: 1, backgroundColor: colors.surfaceTertiary }}>
+                <View style={{ flex: 1, width: "100%", maxWidth: Platform.OS === "web" ? 1080 : undefined, alignSelf: "center" }}>
+                  <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.surfaceSecondary } }} />
+                </View>
+              </View>
             </ToastProvider>
           </AuthProvider>
         </KeyboardProvider>

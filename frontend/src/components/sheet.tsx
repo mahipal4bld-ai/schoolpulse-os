@@ -32,6 +32,9 @@ export function Sheet({
           <View
             testID={testID}
             style={{
+              width: "100%",
+              maxWidth: 640,
+              alignSelf: "center",
               backgroundColor: colors.surface,
               borderTopLeftRadius: radius.lg + 4,
               borderTopRightRadius: radius.lg + 4,

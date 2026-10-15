@@ -32,7 +32,7 @@ export default function Settings() {
       <Header title={t("settings")} subtitle={membership?.school.name} />
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: bottomChrome + spacing.xl, gap: spacing.xl }}>
         <View>
-          <SectionTitle title="School" />
+          <SectionTitle title={t("school")} />
           <Card style={{ paddingVertical: 0 }}>
             {rows.map((r, i) => (
               <Row key={r.id} testID={`settings-${r.id}`} last={i === rows.length - 1} icon={<IconTile>{r.icon}</IconTile>} title={r.title} subtitle={r.sub} onPress={() => router.push(r.href as any)} />

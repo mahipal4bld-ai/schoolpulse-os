@@ -28,7 +28,7 @@ async def build_me(user: dict) -> dict:
     schools = []
     for m in memberships:
         s = await db.schools.find_one({"_id": oid(m["school_id"])})
-        if not s:
+        if not s or s.get("status") == "suspended":
             continue
         schools.append({
             "school_id": m["school_id"], "role": m["role"],

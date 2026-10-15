@@ -21,6 +21,9 @@ Expo (native + web) → FastAPI `/api` → MongoDB. See `/app/docs/ARCHITECTURE.
 - Seed: Sunrise Valley Academy (72 students) & Greenfield Public School (50 students)
 - Tests: 39 backend pytest passing (tests/test_milestone1.py + test_milestone1_edges.py); frontend E2E verified by testing agent
 
+## M1 Verification Audit (Oct 2026)
+- 49/49 backend tests pass; UI E2E pass (iteration_2). Fixed: student/teacher edit UI, desktop width, suspended-school filtering, more Hindi, test-data cleanup. See /app/docs/M1_AUDIT.md
+
 ## Backlog
 - P0 (M2): Attendance, homework/diary, timetable & calendar, notices
 - P1: Fees & receipts, admissions CRM, exams/report cards, leave/help desk, PTM

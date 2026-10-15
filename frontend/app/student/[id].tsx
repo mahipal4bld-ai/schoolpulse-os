@@ -5,11 +5,12 @@ import React, { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { api } from "@/src/api";
+import { api, Paged } from "@/src/api";
+import type { SchoolClass } from "@/src/types";
 import { useAuth } from "@/src/auth";
 import { Sheet } from "@/src/components/sheet";
 import { useToast } from "@/src/components/toast";
-import { Badge, Button, Card, ErrorState, Field, Header, IconTile, LoadingState, Row, SectionTitle, Segmented, Txt } from "@/src/components/ui";
+import { Badge, Button, Card, ChipRow, ErrorState, Field, Header, IconTile, LoadingState, Row, SectionTitle, Segmented, Txt } from "@/src/components/ui";
 import { formatDate } from "@/src/format";
 import { spacing, useTheme } from "@/src/theme";
 
@@ -47,6 +48,22 @@ export default function StudentDetail() {
       done("Guardian linked");
     },
     onError: (e: Error) => toast.show(e.message, "error"),
+  });
+  const classes = useQuery({ queryKey: ["classes", sid], enabled: manage, queryFn: () => api<Paged<SchoolClass>>("/classes?page_size=100") });
+  const [editOpen, setEditOpen] = useState(false);
+  const [e, setE] = useState({ first_name: "", last_name: "", roll_no: "", class_id: "", section_id: "" });
+  const editCls = classes.data?.items.find((c) => c.id === e.class_id);
+  const edit = useMutation({
+    mutationFn: () =>
+      api(`/students/${id}`, {
+        method: "PATCH",
+        body: { first_name: e.first_name.trim(), last_name: e.last_name.trim(), roll_no: e.roll_no ? Number(e.roll_no) : null, ...(e.section_id ? { section_id: e.section_id } : {}) },
+      }),
+    onSuccess: () => {
+      setEditOpen(false);
+      done("Student updated");
+    },
+    onError: (err: Error) => toast.show(err.message, "error"),
   });
   const archive = useMutation({
     mutationFn: () => api(`/students/${id}`, { method: "DELETE" }),
@@ -110,6 +127,17 @@ export default function StudentDetail() {
           <Txt variant="caption" style={{ marginTop: spacing.sm }}>Only verified guardians whose email matches an app account can view this child.</Txt>
         </View>
 
+        {manage && s.status === "active" ? (
+          <Button
+            testID="edit-student-button"
+            variant="outline"
+            title="Edit student"
+            onPress={() => {
+              setE({ first_name: s.first_name, last_name: s.last_name, roll_no: s.roll_no ? String(s.roll_no) : "", class_id: s.class_id, section_id: s.section_id });
+              setEditOpen(true);
+            }}
+          />
+        ) : null}
         {manage && s.status === "active" ? <Button testID="archive-student-button" variant="danger" title="Archive student" onPress={() => setArchiveOpen(true)} /> : null}
       </ScrollView>
 
@@ -122,6 +150,22 @@ export default function StudentDetail() {
           <Phone size={14} color={colors.muted} />
           <Txt variant="caption">An existing guardian with the same mobile is reused.</Txt>
         </View>
+      </Sheet>
+      <Sheet visible={editOpen} onClose={() => setEditOpen(false)} title="Edit student" testID="edit-student-sheet" footer={<Button testID="edit-student-submit" title="Save changes" loading={edit.isPending} onPress={() => edit.mutate()} />}>
+        <Field testID="edit-student-first-name" label="First name" value={e.first_name} onChangeText={(v) => setE({ ...e, first_name: v })} />
+        <Field testID="edit-student-last-name" label="Last name" value={e.last_name} onChangeText={(v) => setE({ ...e, last_name: v })} />
+        <Field testID="edit-student-roll" label="Roll number" keyboardType="number-pad" value={e.roll_no} onChangeText={(v) => setE({ ...e, roll_no: v })} />
+        <View style={{ marginHorizontal: -spacing.xl, gap: spacing.xs }}>
+          <Txt variant="label" style={{ paddingHorizontal: spacing.xl }}>Class</Txt>
+          <ChipRow testIDPrefix="edit-student-class" value={e.class_id} onChange={(v) => setE({ ...e, class_id: v, section_id: "" })} options={(classes.data?.items ?? []).map((c) => ({ value: c.id, label: c.name }))} />
+          {editCls ? (
+            <>
+              <Txt variant="label" style={{ paddingHorizontal: spacing.xl }}>Section</Txt>
+              <ChipRow testIDPrefix="edit-student-section" value={e.section_id} onChange={(v) => setE({ ...e, section_id: v })} options={editCls.sections.map((x) => ({ value: x.id, label: `Section ${x.name}` }))} />
+            </>
+          ) : null}
+        </View>
+        {!e.section_id ? <Txt variant="caption" color={colors.warning}>Choose a section to move the student, or keep the current one by re-selecting it.</Txt> : null}
       </Sheet>
       <Sheet visible={archiveOpen} onClose={() => setArchiveOpen(false)} title="Archive student?" testID="archive-student-sheet" footer={<Button testID="archive-student-confirm" variant="danger" title="Archive" loading={archive.isPending} onPress={() => archive.mutate()} />}>
         <Txt variant="body">The record is retained for compliance but removed from active lists and counts.</Txt>

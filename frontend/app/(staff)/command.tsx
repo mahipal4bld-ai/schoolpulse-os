@@ -108,7 +108,7 @@ export default function CommandCentre() {
         ) : c ? (
           <>
             <View>
-              <SectionTitle title="School overview" action={<Badge label="Live from records" tone="success" />} />
+              <SectionTitle title={t("schoolOverview")} action={<Badge label={t("liveFromRecords")} tone="success" />} />
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.md }}>
                 <Stat testID="stat-students" delay={50} label={t("students")} value={c.students} icon={<Student size={20} color={colors.onBrandTertiary} />} />
                 <Stat testID="stat-teachers" delay={100} label={t("teachers")} value={c.teachers} icon={<ChalkboardTeacher size={20} color={colors.onBrandTertiary} />} />
@@ -131,7 +131,7 @@ export default function CommandCentre() {
             </Card>
 
             <View>
-              <SectionTitle title="Students by class" />
+              <SectionTitle title={t("studentsByClass")} />
               <Card testID="class-distribution-card" style={{ gap: spacing.md }}>
                 {q.data!.by_class.length === 0 ? (
                   <Txt variant="caption">No classes yet. Add them in Academics.</Txt>
@@ -156,16 +156,16 @@ export default function CommandCentre() {
         ) : null}
 
         <View>
-          <SectionTitle title="Quick actions" />
+          <SectionTitle title={t("quickActions")} />
           <Card style={{ paddingVertical: 0 }}>
             {can("brand.manage") ? (
               <Row testID="quick-brand-studio" icon={<IconTile><PaintBrush size={18} color={colors.onBrandTertiary} /></IconTile>} title={t("brandStudio")} subtitle="Logo, colours and welcome banner" onPress={() => router.push("/brand-studio")} />
             ) : null}
             {can("people.manage") ? (
-              <Row testID="quick-add-student" icon={<IconTile><UserPlus size={18} color={colors.onBrandTertiary} /></IconTile>} title="Add a student" subtitle="Admission record with class placement" onPress={() => router.push("/student-new")} />
+              <Row testID="quick-add-student" icon={<IconTile><UserPlus size={18} color={colors.onBrandTertiary} /></IconTile>} title={t("addStudent")} subtitle="Admission record with class placement" onPress={() => router.push("/student-new")} />
             ) : null}
-            <Row testID="quick-academics" icon={<IconTile><Books size={18} color={colors.onBrandTertiary} /></IconTile>} title="Academic setup" subtitle="Years, classes, sections and subjects" onPress={() => router.push("/academics")} />
-            <Row testID="quick-people" last icon={<IconTile><UsersThree size={18} color={colors.onBrandTertiary} /></IconTile>} title="Student & staff directory" subtitle={c ? `${c.students} students · ${c.staff_members} staff accounts` : undefined} onPress={() => router.push("/people")} />
+            <Row testID="quick-academics" icon={<IconTile><Books size={18} color={colors.onBrandTertiary} /></IconTile>} title={t("academicSetup")} subtitle="Years, classes, sections and subjects" onPress={() => router.push("/academics")} />
+            <Row testID="quick-people" last icon={<IconTile><UsersThree size={18} color={colors.onBrandTertiary} /></IconTile>} title={t("directory")} subtitle={c ? `${c.students} students · ${c.staff_members} staff accounts` : undefined} onPress={() => router.push("/people")} />
           </Card>
         </View>
 

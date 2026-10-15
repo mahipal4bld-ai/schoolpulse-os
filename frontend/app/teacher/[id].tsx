@@ -9,7 +9,7 @@ import { api, Paged } from "@/src/api";
 import { useAuth } from "@/src/auth";
 import { Sheet } from "@/src/components/sheet";
 import { useToast } from "@/src/components/toast";
-import { Badge, Button, Card, ChipRow, ErrorState, Header, IconTile, LoadingState, Row, SectionTitle, Txt } from "@/src/components/ui";
+import { Badge, Button, Card, ChipRow, ErrorState, Field, Header, IconTile, LoadingState, Row, SectionTitle, Segmented, Txt } from "@/src/components/ui";
 import { spacing, useTheme } from "@/src/theme";
 import type { SchoolClass, Teacher } from "@/src/types";
 
@@ -54,6 +54,17 @@ export default function TeacherDetail() {
     },
     onError: (e: Error) => toast.show(e.message, "error"),
   });
+  const [editOpen, setEditOpen] = useState(false);
+  const [te, setTe] = useState({ name: "", phone: "", designation: "", status: "active" });
+  const editT = useMutation({
+    mutationFn: () => api(`/teachers/${id}`, { method: "PATCH", body: { name: te.name.trim(), phone: te.phone.trim(), designation: te.designation.trim(), status: te.status } }),
+    onSuccess: () => {
+      setEditOpen(false);
+      refresh();
+      toast.show("Teacher updated");
+    },
+    onError: (e: Error) => toast.show(e.message, "error"),
+  });
 
   if (q.isLoading) return <LoadingState />;
   if (q.isError) return <View style={{ flex: 1 }}><Header back title="Teacher" /><ErrorState message={(q.error as Error).message} onRetry={() => q.refetch()} /></View>;
@@ -66,6 +77,10 @@ export default function TeacherDetail() {
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}><Txt variant="caption">Email</Txt><Txt variant="label">{t.email}</Txt></View>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}><Txt variant="caption">Mobile</Txt><Txt variant="label">+91 {t.phone}</Txt></View>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}><Txt variant="caption">App access</Txt><Badge label={t.user_id ? "Active" : "Not invited"} tone={t.user_id ? "success" : "neutral"} /></View>
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}><Txt variant="caption">Status</Txt><Badge testID="teacher-status-badge" label={t.status} tone={t.status === "active" ? "success" : "neutral"} /></View>
+          {can("staff.manage") ? (
+            <Button small variant="outline" testID="edit-teacher-button" title="Edit teacher" onPress={() => { setTe({ name: t.name, phone: t.phone, designation: t.designation, status: t.status }); setEditOpen(true); }} />
+          ) : null}
         </Card>
         <View>
           <SectionTitle title="Class assignments" action={manage ? <Button small variant="ghost" testID="add-assignment-button" title="Assign" onPress={() => setOpen(true)} /> : null} />
@@ -92,6 +107,12 @@ export default function TeacherDetail() {
           </Card>
         </View>
       </ScrollView>
+      <Sheet visible={editOpen} onClose={() => setEditOpen(false)} title="Edit teacher" testID="edit-teacher-sheet" footer={<Button testID="edit-teacher-submit" title="Save changes" loading={editT.isPending} onPress={() => editT.mutate()} />}>
+        <Field testID="edit-teacher-name" label="Full name" value={te.name} onChangeText={(v) => setTe({ ...te, name: v })} />
+        <Field testID="edit-teacher-phone" label="Mobile (10 digits)" keyboardType="phone-pad" maxLength={10} value={te.phone} onChangeText={(v) => setTe({ ...te, phone: v })} />
+        <Field testID="edit-teacher-designation" label="Designation" value={te.designation} onChangeText={(v) => setTe({ ...te, designation: v })} />
+        <Segmented testIDPrefix="edit-teacher-status" value={te.status} onChange={(v) => setTe({ ...te, status: v })} options={[{ value: "active", label: "Active" }, { value: "inactive", label: "Inactive" }]} />
+      </Sheet>
       <Sheet visible={open} onClose={() => setOpen(false)} title="Assign class" testID="assignment-sheet" footer={<Button testID="assignment-submit" title="Save assignment" loading={add.isPending} onPress={() => add.mutate()} />}>
         <View style={{ marginHorizontal: -spacing.xl, gap: spacing.xs }}>
           <Txt variant="label" style={{ paddingHorizontal: spacing.xl }}>Class</Txt>

@@ -1,0 +1,35 @@
+{
+  "summary": "SchoolPulse OS Milestone 1 audit pass. Backend: all 49 pytest cases GREEN (test_milestone1.py + test_milestone1_edges.py + test_milestone1_audit.py). Frontend: verified every NEW fix. (a) Student detail /student/<id> exposes testID 'edit-student-button' -> opens 'edit-student-sheet' with first/last name, roll, class/section chips and 'edit-student-submit'; mutation shows 'Student updated' toast. (b) Teacher detail /teacher/<id> exposes 'edit-teacher-button' -> 'edit-teacher-sheet' with full name, mobile (10 digits), designation, status Active/Inactive chips and 'edit-teacher-submit'. (c) Desktop web width constraint confirmed: /app/frontend/app/login.tsx uses maxWidth 520 for login form; /app/frontend/app/_layout.tsx constrains whole web app to 1080px alignSelf center; /app/frontend/src/components/sheet.tsx line 36 enforces maxWidth 640 for bottom sheets. (d) Suspended schools filter confirmed in /app/backend/routes_auth.py line 31 (if s.get('status') == 'suspended': skip) + covered by audit tests. (e) Hindi strings verified for Settings section title (सेटिंग्स, स्कूल, ब्रांड स्टूडियो, स्कूल प्रोफाइल, स्टाफ़ आमंत्रण, विद्यार्थी आयात, ऑडिट लॉग, साइन आउट) and Command Centre keys schoolOverview='स्कूल अवलोकन', quickActions='त्वरित कार्य', studentsByClass='कक्षा अनुसार विद्यार्थी' in /app/frontend/src/i18n.ts; tab bar labels Hindi (होम / लोग / शैक्षिक / सेटिंग्स). Permissions matrix (settings rows) verified live: owner_brand=TRUE, owner_audit=TRUE; principal_brand=FALSE, principal_audit=TRUE; admin_brand=FALSE, admin_audit=FALSE — exactly as spec requires. Multi-parent sees 2 active memberships (sunrise-valley + greenfield-public) via /api/auth/me. Brand colours remain #9A3412/#D97706 for Sunrise after audit. Cleanup script executed: removed 6 test schools + 6 orphan users; schools table back to 2 (sunrise-valley, greenfield-public). Welcome message restored to 'Good to see you at Sunrise Valley' via PATCH /api/school/brand. No deprecated expo packages found. No React Native red screens. Only observations: during page reload immediately after an auth mutation we see transient 401s before token restore completes (cosmetic, no user impact) and the Hindi string for Settings subtitle 'भाषा' / rows still mix some English subtitles (e.g. 'Logo, colours, banner and welcome message') — functional strings localized, descriptive subtitles not — this matches current scope of change.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Settings (Hindi)", "issues": ["Row titles localized but secondary subtitles (e.g. 'Logo, colours, banner and welcome message', 'Contact, session, timings and language', 'Invite principals, teachers and staff') remain English. Not in scope of this audit but worth noting for M2."]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_milestone1.py",
+    "/app/backend/tests/test_milestone1_edges.py",
+    "/app/backend/tests/test_milestone1_audit.py",
+    "/app/test_reports/pytest/audit_results.xml"
+  ],
+  "action_items": [
+    "Optional (M2): localize settings-row subtitles to Hindi for full parity with titles."
+  ],
+  "critical_code_review_comments": [
+    "Edit sheets properly use PATCH endpoints with Pydantic validation and X-School-Id scoping.",
+    "Width constraints (520/1080/640) applied via Platform.OS checks so native layout untouched.",
+    "Suspended-tenant filter happens server-side in /auth/me (routes_auth.py:31), preventing client-side bypass.",
+    "Permission gating (can('brand.manage') / can('audit.view')) hides Brand Studio from principal/admin and Audit log from admin — matches RBAC spec.",
+    "/app/backend/routes_directory.py still ~656 lines (approaching 700-line guideline); candidate for M2 split."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (49/49)", "frontend": "100% of audit-scope flows passed"},
+  "seed_data_creation": "No new test data created in this iteration. Ran /app/backend/scripts/cleanup_test_data.py to purge leftover test tenants/users from previous iteration (6 schools + 6 orphan users removed). Welcome message on Sunrise restored to 'Good to see you at Sunrise Valley' (an earlier audit test had set it to 'audit-test').",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All M1 pytest files reside in /app/backend/tests/ (49 cases). Frontend uses EXPO_PUBLIC_BACKEND_URL (not EXPO_BACKEND_URL). Important testID conventions: 'student-row-<admission_no>' and 'teacher-row-<id>' on list rows; edit flows use '*-button' -> '*-sheet' -> '*-submit'. Settings rows use 'settings-<id>' where id∈{brand-studio, school-profile, invitations, import, audit}. Hindi toggle testIDs: 'language-toggle-en' / 'language-toggle-hi'. Sign out testID is 'sign-out-row' and clicking it immediately signs out (no confirm modal observed — the earlier text='Sign out' confirm attempt actually re-clicked the row, so prefer waiting on URL change to /login after click).",
+  "rca_of_issue": "N/A — no regressions in this audit pass."
+}
