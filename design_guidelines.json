@@ -1,0 +1,188 @@
+{
+  "app_name": "SchoolPulse OS",
+  "personality": "1 iOS-Native Clean",
+  "personality_one_liner": "An elegant, modern, and professional SaaS command center that feels native, premium, and breathable, letting the dynamic school branding and critical operational data shine without clutter.",
+  "color": {
+    "surface": "#FFFFFF",
+    "onSurface": "#111827",
+    "surfaceSecondary": "#F9FAFB",
+    "onSurfaceSecondary": "#1F2937",
+    "surfaceTertiary": "#F3F4F6",
+    "onSurfaceTertiary": "#374151",
+    "surfaceInverse": "#111827",
+    "onSurfaceInverse": "#FFFFFF",
+    "brand": "#0A192F",
+    "brandPrimary": "#0A192F",
+    "onBrandPrimary": "#FFFFFF",
+    "brandSecondary": "#0D9488",
+    "onBrandSecondary": "#FFFFFF",
+    "brandTertiary": "#E0E7FF",
+    "onBrandTertiary": "#0A192F",
+    "success": "#10B981",
+    "onSuccess": "#FFFFFF",
+    "warning": "#F59E0B",
+    "onWarning": "#FFFFFF",
+    "error": "#EF4444",
+    "onError": "#FFFFFF",
+    "info": "#3B82F6",
+    "onInfo": "#FFFFFF",
+    "border": "#E5E7EB",
+    "borderStrong": "#D1D5DB",
+    "divider": "#F3F4F6",
+    "muted": "#6B7280"
+  },
+  "typography": {
+    "displayFontFamily": "Plus Jakarta Sans",
+    "textFontFamily": "Plus Jakarta Sans",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24
+    }
+  },
+  "spacing": {
+    "rule": "Generous vertical breathing room. Use 'md' (12pt) or 'lg' (16pt) gaps between related items, and 'xl' (24pt) between distinct sections. Cards should never be flush to the edge.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 6,
+    "md": 12,
+    "lg": 20,
+    "pill": 999
+  },
+  "shadow_tier": "1",
+  "navigation": "bottom_tabs",
+  "icon_set": "Phosphor",
+  "glassmorphism": {
+    "enabled": "true",
+    "do's": [
+      "Sticky headers over scrolling content",
+      "Bottom tab bar",
+      "Floating action buttons (FAB)",
+      "Bottom-sheet headers and drag handles"
+    ],
+    "dont's": [
+      "Form fields",
+      "Every card or list row",
+      "Body text regions"
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-glass-effect",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "haptics": {
+    "events": {
+      "tab_press": "light",
+      "button_press": "medium",
+      "switch_toggle": "light",
+      "success_action": "success",
+      "error_action": "error",
+      "child_profile_switch": "selection"
+    }
+  },
+  "screens": [
+    {
+      "name": "Login & Demo Picker",
+      "purpose": "Secure entry point with an easy demo account switcher for development.",
+      "states": {
+        "loading": "Centered spinner",
+        "empty": "N/A",
+        "error": "Inline text below form fields + toast"
+      },
+      "layout": "Full-bleed white surface. Centered logo and minimal login form. Bottom sheet triggers the 'Demo Account Picker' showing rounded list items (Owner, Teacher, Parent) with role-specific icons."
+    },
+    {
+      "name": "Owner Command Centre",
+      "purpose": "High-level overview of school operations and quick access to settings.",
+      "states": {
+        "loading": "Skeleton loaders for metric cards",
+        "empty": "No data illustration with 'Complete Academic Setup' CTA",
+        "error": "Retry button centered in card areas"
+      },
+      "layout": "Header with dynamic school name and logo. A 2-column grid for key metrics (Students, Staff counts) using brandTertiary tinted icons. Below, list rows for 'Brand Studio' and 'Academic Setup' with trailing chevrons."
+    },
+    {
+      "name": "Brand Studio",
+      "purpose": "Allow owners to upload logos, pick brand colors, and preview the app.",
+      "states": {
+        "loading": "Spinner while saving",
+        "empty": "Default navy/teal theme applied",
+        "error": "Toast on save failure"
+      },
+      "layout": "Sticky 'Save' FAB at the bottom. Top section is a live 'Preview Card' showcasing current color choices. Below, a single-column form with color pickers and image upload blocks."
+    },
+    {
+      "name": "Teacher Dashboard & Roster",
+      "purpose": "Quick attendance marking and daily schedule management.",
+      "states": {
+        "loading": "List skeleton",
+        "empty": "Illustration of empty classroom with 'No classes assigned today'",
+        "error": "Full screen error with Retry CTA"
+      },
+      "layout": "Segmented control at the top to toggle between 'Today's Classes' and 'Roster'. Subject-wise cards with fast 'Present/Absent' toggles to minimize cognitive load."
+    },
+    {
+      "name": "Parent Child Home",
+      "purpose": "Personalized feed of the child's academic updates and alerts.",
+      "states": {
+        "loading": "Card skeletons",
+        "empty": "Illustration with 'No updates for today'",
+        "error": "Retry button in feed"
+      },
+      "layout": "Header features a multi-child switcher (Profile card trigger opening a bottom sheet). Chronological modular cards for attendance, homework, and exams. Floating filter icon in the header."
+    },
+    {
+      "name": "Super Admin Tenant List",
+      "purpose": "Manage all registered schools/tenants.",
+      "states": {
+        "loading": "Table skeleton",
+        "empty": "Empty state illustration with 'Add first school' CTA",
+        "error": "Error message with Retry"
+      },
+      "layout": "Search bar pinned to the top. List view of schools with subtle surfaceSecondary backgrounds. 'Add School' glass FAB sticky at bottom."
+    }
+  ],
+  "images": {
+    "teacher_avatar": {
+      "url": "https://images.unsplash.com/photo-1590650213165-c1fef80648c4?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzl8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBzY2hvb2wlMjB0ZWFjaGVyJTIwc21pbGluZyUyMGZhY2V8ZW58MHx8fHwxNzkyMDU1OTY2fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "smiling woman in blue blazer leaning on wall"
+    },
+    "student_avatar": {
+      "url": "https://images.unsplash.com/photo-1514369118554-e20d93546b30?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwxfHxoaWdoJTIwc2Nob29sJTIwc3R1ZGVudCUyMHN0dWR5aW5nJTIwc21pbGluZ3xlbnwwfHx8fDE3OTIwNTU5NjZ8MA&ixlib=rb-4.1.0&q=85",
+      "alt": "student studying"
+    },
+    "empty_classroom_state": {
+      "url": "https://images.unsplash.com/photo-1738308508484-2a5226b4208d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2Mzl8MHwxfHNlYXJjaHwxfHxlbXB0eSUyMG1vZGVybiUyMGNsYXNzcm9vbSUyMGludGVyaW9yfGVufDB8fHx8MTc5MjA1NTk2Nnww&ixlib=rb-4.1.0&q=85",
+      "alt": "An empty classroom with no students in it"
+    },
+    "school_logo_fallback": {
+      "url": "https://images.unsplash.com/photo-1725801731061-041393837983?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMG1vZGVybiUyMHNjaG9vbCUyMGxvZ28lMjB2ZWN0b3J8ZW58MHx8fHwxNzkyMDU1OTcxfDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Abstract back to school logo"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Design Foundation: Implement '1 iOS-Native Clean' personality. The UI must be highly breathable with generous 'xl' and '2xl' spacing between sections to avoid the 'outdated ERP' crowded look.",
+    "Dynamic Theming (CRITICAL): The app requires runtime-dynamic per-school branding. Build a ThemeContext/Provider that uses the default Deep Navy (#0A192F) and Teal (#0D9488) for Super Admin and Login, but overrides 'brandPrimary' and 'brandSecondary' based on the school config once a tenant is selected.",
+    "Typography: Use Plus Jakarta Sans (Weight 400 and 500 ONLY) across the app to achieve a premium SaaS look. Do not use weights above 500; rely on size for hierarchy.",
+    "Navigation & Interaction: Use bottom tabs for Teacher and Parent roles. Use a bottom sheet for the Demo Account Picker and the Parent Multi-Child Switcher. Implement subtle glassmorphism on the tab bar and sticky headers.",
+    "Visual Hierarchy: Use 'brandTertiary' tinted icon containers (rounded squares) for settings rows and category cards. Keep the primary CTA sticky at the bottom on scrollable forms (like Academic Setup and Brand Studio).",
+    "Empty States: Always ensure empty, error, and loading states fill the screen (flex: 1) and utilize the provided empty_classroom_state image or Phosphor icons, centered with clear, short copy."
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "summary": "Milestone 1 end-to-end testing. Backend: all 16 existing pytest cases pass; added 23 edge-case tests in /app/backend/tests/test_milestone1_edges.py (preferences, demo-accounts shape, logout-all, platform suspend/reactivate, platform stats, invitations CRUD+dup+perms, subject CRUD, audit log listing+permission, settings PATCH, public brand distinct per school, brand hex/empty validation, teacher dashboard shape, parent child detail, CSV real import, guardian link dup). Total 39/39 backend tests green. Frontend: logged in as all 6 demo accounts via demo picker on mobile viewport 390x844; owner (Sunrise & Greenfield) command centre + stats + People tab w/ segmented tabs/search/class chips/Add student + Settings + Brand Studio render perfectly; teacher Today dashboard with assigned classes & bottom tabs; parent Family screen with child switcher button (2 children for parent@sunrise.demo); super admin platform console with suspend/add-school FAB and 8 tenants; multi.parent@schoolpulse.demo lands on /select-school with both tenants. Brand swatch change persists end-to-end (verified via /api/public/schools/sunrise-valley/brand) and was restored to original #9A3412/#D97706. Language toggle flips tab labels Home->होम, Settings->सेटिंग्स immediately. Branding visibly distinct: Sunrise terracotta vs Greenfield green. Sign-out testID present (sign-out-row). No deprecated expo-av/expo-barcode-scanner/expo-background-fetch found in app source. Only non-blocking observation: 'Brand saved' toast overlays the bottom tab bar for a moment after save (cosmetic).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Brand Studio", "issues": ["'Brand saved. Your school app now uses it.' toast overlays bottom tab bar briefly; consider raising above tab bar or auto-dismiss faster"]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_milestone1.py",
+    "/app/backend/tests/test_milestone1_edges.py",
+    "/app/test_reports/pytest/milestone1_results.xml",
+    "/app/test_reports/pytest/edges_results.xml"
+  ],
+  "action_items": [
+    "Optional: tweak Brand Studio success toast to not overlap bottom tabs",
+    "Optional refactor: /app/backend/routes_directory.py is 656 lines, approaching 700-line guideline; consider splitting into students/teachers/academics modules in Milestone 2"
+  ],
+  "critical_code_review_comments": [
+    "Code hygiene is solid: all endpoints Pydantic-validated, X-School-Id scoping enforced via Depends(school_ctx)/need(), cross-tenant & suspended tenant rejected, audit trail written on mutations, bcrypt via core.hash_password, session revoke on logout/logout-all works correctly.",
+    "Brand hex validator properly rejects malformed values (422) including 'red', '#12', '#ZZZZZZ', '123456'.",
+    "Public brand endpoint correctly 404s for unknown slug and hides suspended tenants.",
+    "Guardian link duplicate rejected (409) and parent cross-child access denied (403)."
+  ],
+  "updated_files": ["/app/backend/tests/test_milestone1_edges.py"],
+  "success_rate": {"backend": "100% (39/39)", "frontend": "100% of flows exercised rendered successfully"},
+  "seed_data_creation": "Tests created a handful of TEST_/edge-slug tenants via /platform/schools during edge tests; these appear in Super Admin platform list (edge-xyzab2, edge-<uuid> entries). They are harmless but main agent may want to add a cleanup script if the platform list grows noisy.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend covered by 39 pytest cases in /app/backend/tests/. Reuse login(), hdr(), owner() helpers. Frontend demo picker uses testIDs 'open-demo-picker-button' and 'demo-account-<email>'. Multi-parent routes to /select-school; owner->/command; teacher->/today; parent->/family; super admin->/platform. Brand Studio reachable via tab-settings -> settings-brand-studio; language toggles are language-toggle-en / language-toggle-hi; sign out is sign-out-row (not sign-out-button).",
+  "rca_of_issue": "N/A - no bugs to RCA. Any failures in the first edge-test run were test-side payload mismatches (wrong field names, min_length violations) which were corrected after schema inspection; all green on second run."
+}
