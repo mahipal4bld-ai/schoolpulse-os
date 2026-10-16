@@ -77,3 +77,12 @@ Staff attendance and leave approvals, homework with attachments, class diary, ti
 - Demo seed: timetable auto-generated clash-free from teacher assignments (DEMO_MODE only, idempotent).
 - UI: Command Centre → Timetable (bell schedule editor, class list → day tabs, tap-to-assign editor); teacher My timetable; parent child timetable.
 - Tests: `tests/test_m2_timetable.py` (2), full backend 90 passed; testing agent PASS (iteration_8). Cosmetic: shadow*/pointerEvents props migrated to boxShadow / style.pointerEvents.
+
+## Part B — Module 6 Examinations (built and tested)
+- Collections: `exams {school_id, name, term, start_date, end_date, section_ids[], subjects[{subject_id,max_marks,pass_marks,date}], status(marks_open|published|deleted), published_at}`, `exam_marks {school_id, exam_id, section_id, subject_id, records[{student_id,marks,absent}], entered_by}` (unique exam+section+subject).
+- Rules: only academic.manage creates/publishes; teachers enter marks only for subjects they teach (class teachers any); every student must be marked or absent; 0..max, half-marks allowed; publish blocked until all sheets entered; published exams lock marks (re-open to edit); published exams cannot be deleted; all actions audited.
+- Results: totals, percentage, CBSE-style grade (A1…E), pass/fail per subject, competition ranking, class average.
+- Branded PDF report card (reportlab): school primary/secondary colours, logo from object storage, student details, subject table, grade, rank, signatures; `Cache-Control: no-store`; parent access only after publish for verified child.
+- API: `/api/exams` (+ `/{id}`, `/{id}/marks`, `/{id}/status`, `/{id}/results`, `/summary/recent`, `/{id}/report-card/{student}.pdf`), `/api/parent/children/{id}/exams`.
+- UI: Examinations list/create, exam detail with progress + publish/re-open, marks entry, results with expandable subjects + report card; parent Exam results screen.
+- Tests: `tests/test_m2_exams.py` (2), full backend 92 passed; testing agent PASS (iteration_9).

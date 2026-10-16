@@ -114,6 +114,11 @@ export function privateFileUrl(id: string) {
   return `${API_BASE}/files/${id}${token ? `?token=${encodeURIComponent(token)}` : ""}`;
 }
 
+/** Branded PDF report card (opened in the system browser). */
+export function reportCardUrl(examId: string, studentId: string) {
+  return `${API_BASE}/exams/${examId}/report-card/${studentId}.pdf?school=${schoolId ?? ""}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
+}
+
 export async function uploadImage(uri: string, purpose: "logo" | "banner" | "photo", mime = "image/jpeg") {
   const name = `${purpose}.${mime.split("/")[1] || "jpg"}`;
   const form = new FormData();

@@ -308,5 +308,7 @@ async def ensure_indexes():
     await db.homework.create_index("attachments")
     await db.diary.create_index([("school_id", 1), ("section_id", 1), ("date", 1)])
     await db.timetable_settings.create_index("school_id", unique=True)
+    await db.exams.create_index([("school_id", 1), ("status", 1), ("start_date", -1)])
+    await db.exam_marks.create_index([("exam_id", 1), ("section_id", 1), ("subject_id", 1)], unique=True)
     await db.timetable_slots.create_index([("school_id", 1), ("section_id", 1), ("day", 1), ("period", 1)], unique=True)
     await db.timetable_slots.create_index([("school_id", 1), ("teacher_id", 1), ("day", 1), ("period", 1)])

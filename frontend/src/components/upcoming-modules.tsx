@@ -11,7 +11,6 @@ const MODULES: Record<string, [string, string][]> = {
     ["Messages", "Notices and teacher communication"],
   ],
   teacher: [
-    ["Examinations", "Marks entry and report cards"],
     ["AI Teacher Assistant", "Drafts grounded in your class data"],
   ],
   staff: [
