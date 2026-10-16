@@ -105,7 +105,7 @@ export default function Platform() {
       <Pressable
         testID="add-school-fab"
         onPress={() => setOpen(true)}
-        style={({ pressed }) => ({ position: "absolute", right: spacing.lg, bottom: insets.bottom + spacing.lg, height: 52, paddingHorizontal: spacing.xl, borderRadius: radius.pill, backgroundColor: colors.brandPrimary, flexDirection: "row", alignItems: "center", gap: spacing.sm, transform: [{ scale: pressed ? 0.96 : 1 }], elevation: 4, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } })}
+        style={({ pressed }) => ({ position: "absolute", right: spacing.lg, bottom: insets.bottom + spacing.lg, height: 52, paddingHorizontal: spacing.xl, borderRadius: radius.pill, backgroundColor: colors.brandPrimary, flexDirection: "row", alignItems: "center", gap: spacing.sm, transform: [{ scale: pressed ? 0.96 : 1 }], boxShadow: "0px 6px 12px rgba(0, 0, 0, 0.15)" })}
       >
         <Plus size={18} color={colors.onBrandPrimary} weight="bold" />
         <Txt variant="label" color={colors.onBrandPrimary}>Add school</Txt>

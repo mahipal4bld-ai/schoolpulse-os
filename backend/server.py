@@ -20,6 +20,7 @@ from routes_school import router as school_router
 from routes_staff import router as staff_router
 from routes_homework import router as homework_router
 from routes_diary import router as diary_router
+from routes_timetable import router as timetable_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("schoolpulse")
@@ -69,6 +70,7 @@ api.include_router(attendance_router)
 api.include_router(staff_router)
 api.include_router(homework_router)
 api.include_router(diary_router)
+api.include_router(timetable_router)
 app.include_router(api)
 
 
@@ -88,6 +90,8 @@ async def startup():
         logger.warning("DEMO MODE ENABLED: demo picker + fictional seed active. Never use in production.")
         from seed import seed
         await seed()
+        from routes_timetable import seed_demo_timetable
+        await seed_demo_timetable()
         logger.info("Demo seed ensured")
     try:
         storage.init_storage()

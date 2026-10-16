@@ -185,11 +185,7 @@ export default function People() {
             alignItems: "center",
             gap: spacing.sm,
             transform: [{ scale: pressed ? 0.96 : 1 }],
-            shadowColor: "#000",
-            shadowOpacity: 0.15,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 6 },
-            elevation: 4,
+            boxShadow: "0px 6px 12px rgba(0, 0, 0, 0.15)",
           })}
         >
           <Plus size={18} color={colors.onBrandPrimary} weight="bold" />

@@ -1,0 +1,39 @@
+{
+  "summary": "Milestone 2 Module 5 (Timetable) end-to-end PASS. Backend: tests/test_m2_timetable.py 2/2 passed in 2.42s; full suite 90 passed + 1 skipped in 38.00s (zero regression across M1 + M2 attendance/staff/homework/diary/timetable). conftest.py already clears db.login_limits per session (cleared manually once prior to run as a safeguard). UI (390x844): Owner/Admin (admin@sunrise.demo) → Today → quick-timetable → /timetable: tt-bells-card renders exactly 8 periods matching default (08:00-08:40, 08:40-09:20, 09:20-10:00, 10:20-11:00, 11:00-11:40, 11:40-12:20, 13:00-13:40, 13:40-14:20); tt-edit-bells opens tt-bells-sheet with tt-bells-input prefilled 'HH:MM-HH:MM' lines; tt-bells-save round-trip succeeds and card still shows 8 periods. 12 tt-section-<id> rows visible. Opened Class 1-A → DayTabs 6 (Mon..Sat), 8 tt-period-<n> rows (periods on Fri show English + Neha Kulkarni P1..P6, Free P7-P8). tt-period-1 opens tt-slot-sheet with 6 tt-subject-<id> chips, teacher chips including tt-teacher- (None), tt-slot-save, tt-slot-clear (existing slot), tt-room-input. Teacher clash: on Class 2-A Mon P1 selected Hindi + Neha Kulkarni (she already teaches 1-A Mon P1) → save → error toast exact text: 'Conflict: Neha Kulkarni already teaches Class 1 - A in period 1 on Mon' (matches backend DAY_NAMES). Teacher (teacher@sunrise.demo) → Today → teacher-timetable-row → /my-timetable renders DayTabs + 6 period(s) count for Fri, each slot shows 'English / Class 1 - A' (section label as second line, no teacher name leaked). Parent (parent@sunrise.demo) → Family Homework & diary card → child-timetable-row → /child-timetable/<studentId> renders DayTabs + period rows with subject only (show='none'); scanned HTML — no 'teacher_id' key present, confirming backend strips teacher_id for parent view. DB post-test: sunrise slot count 288 (unchanged from pre-test), 2-A Mon P1 still (subject 06, teacher 0e) — no slots were mutated. Bell settings restored to the exact 8 default periods per the handoff note. Only persistent cosmetic warning: 'shadow* style props deprecated. Use boxShadow' (carry-over).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "RN style warnings", "issue": "Carry-over from iterations 4-7: 'shadow* style props are deprecated. Use boxShadow.' logged on timetable screens. Cosmetic; no behaviour impact."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_m2_timetable.py",
+    "/app/test_reports/pytest/m2_timetable_results.xml",
+    "/app/test_reports/pytest/full_suite_m2_timetable.xml"
+  ],
+  "action_items": [
+    "(Optional, carry-over) Migrate deprecated RN style props shadow*→boxShadow in ui.tsx/Card/IconTile to clear console warnings."
+  ],
+  "critical_code_review_comments": [
+    "routes_timetable.py (225 LOC) is well-partitioned: get_periods falls back to DEFAULT_PERIODS when settings doc missing; SettingsIn.save_settings enforces end>start, non-overlap and order via a running prev_end comparison, HH:MM via field_validator — exactly matches the pytest spec.",
+    "set_slot enforces four invariants before upsert: (1) period<=len(settings), (2) subject exists in school, (3) teacher exists+active+assigned-to-section-for-subject-or-is-class-teacher, (4) teacher clash across sections at same day/period, (5) room clash across sections — all return meaningful 400/404/409.",
+    "GET /timetable/sections/{id} only attaches teacher_options+subjects when the caller has academic.manage, correctly hiding the editor payload from teachers (verified in test_settings_validation_and_permissions).",
+    "GET /parent/children/{id}/timetable scrubs teacher_id from every slot before returning (verified via UI body scan + pytest 'teacher_id not in slot' assertion).",
+    "seed_demo_timetable is idempotent (counts first, then skips) and avoids teacher clashes via a busy set — safe to re-run on pod resume.",
+    "DEFAULT_PERIODS correctly models the Indian school day with a lunch break (12:20→13:00); _grid returns today=isoweekday(IST) so WeeklyTimetable auto-selects the current day on open.",
+    "Frontend timetable/[sectionId].tsx filters teacher_options by selected subject_id (or is_class_teacher) — mirrors backend assignment check, so the UI can't pick an unassigned teacher that would 400.",
+    "DaySchedule disables Pressable when onPress is undefined (parent/teacher views), while admin receives tap-to-edit — single component, three roles, no duplication.",
+    "Conflict error surfacing: api.ts throws Error(detail), useToast.show(err.message, 'error') renders the backend string verbatim — matches 'Conflict: ...' assertion and gives operator-friendly context (teacher name, section, day, period).",
+    "Shared WeeklyTimetable component used by both /my-timetable (teacher) and /child-timetable/[id] (parent) via `show` prop ('section' vs 'none') — DRY and matches backend scrubbing policy."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (2/2 M2 timetable; 90 passed + 1 skipped overall)", "frontend": "100% UI smoke (admin bells edit/save round-trip, section editor sheet with chips, teacher conflict toast, teacher my-timetable, parent child-timetable with teacher_id scrubbed)"},
+  "seed_data_creation": "None. All UI interactions were read-only or blocked by server-side conflict (409 before upsert). Bell schedule saved back to the original 8-period default; 2-A Mon P1 slot verified unchanged post-test (subject 6ad09c1a1aad3ba7d4fb3a06, teacher 6ad09c1b1aad3ba7d4fb3a0e). Sunrise slot count 288 (same as pre-test).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "M2 Module 5 (Timetable) is production-ready. Endpoints: GET /api/timetable/settings, PUT /api/timetable/settings (academic.manage; order+overlap+HH:MM checks; slots beyond len(periods) are removed), GET /api/timetable/sections/{id} (teacher gets slots only; admin also gets teacher_options+subjects), PUT /api/timetable/sections/{id}/slots (academic.manage; 409 on teacher/room clash with human message, 400 if teacher not assigned for subject, 404 for unknown subject/teacher), DELETE /api/timetable/sections/{id}/slots?day=&period=, GET /api/timetable/conflicts (academic.manage; aggregates double-bookings), GET /api/timetable/teacher/me (teacher.workspace), GET /api/timetable/teachers/{id} (academic.manage), GET /api/parent/children/{id}/timetable (parent.portal + guardian link; teacher_id stripped). TestIDs: quick-timetable, tt-bells-card, tt-edit-bells, tt-bells-sheet, tt-bells-input, tt-bells-save, tt-conflicts-card, tt-section-<id>, tt-day-1..6 (+ tt-day-count on weekly views), tt-period-<n>, tt-slot-sheet, tt-subject-<id>, tt-teacher-<id> (+ tt-teacher- for None), tt-room-input, tt-slot-save, tt-slot-clear, teacher-timetable-row, child-timetable-row. Modules 1-4 unaffected. Note: `[data-testid^='tt-day-']` matches 7 elements on WeeklyTimetable because of the tt-day-count label — use `[data-testid^='tt-day-'][data-testid$='-1'],...` or `.filter_matches_regex(/^tt-day-\\d+$/)` if you need exactly 6.",
+  "rca_of_issue": "N/A — no bugs found."
+}

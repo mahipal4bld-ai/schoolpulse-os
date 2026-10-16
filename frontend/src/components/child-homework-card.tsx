@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { BookOpenText, NotePencil } from "phosphor-react-native";
+import { BookOpenText, NotePencil, Table } from "phosphor-react-native";
 import React from "react";
 
 import { api } from "@/src/api";
@@ -29,7 +29,8 @@ export function ChildHomeworkCard({ studentId, name }: { studentId: string; name
           <Row key={h.id} testID={`child-hw-row-${h.id}`} icon={<IconTile><NotePencil size={18} color={colors.onBrandTertiary} /></IconTile>} title={`${h.subject_name}: ${h.title}`} subtitle={`Due ${formatDate(h.due_date)}`} onPress={open} />
         ))}
         <Row testID="child-homework-all" title={items.length ? `View all (${items.length} upcoming)` : "No homework due"} subtitle="Upcoming and past homework" onPress={open} />
-        <Row testID="child-diary-row" last icon={<IconTile><BookOpenText size={18} color={colors.onBrandTertiary} /></IconTile>} title="Class diary" subtitle="What was taught each day" onPress={() => router.push({ pathname: "/child-diary/[studentId]", params: { studentId, name } })} />
+        <Row testID="child-diary-row" icon={<IconTile><BookOpenText size={18} color={colors.onBrandTertiary} /></IconTile>} title="Class diary" subtitle="What was taught each day" onPress={() => router.push({ pathname: "/child-diary/[studentId]", params: { studentId, name } })} />
+        <Row testID="child-timetable-row" last icon={<IconTile><Table size={18} color={colors.onBrandTertiary} /></IconTile>} title="Timetable" subtitle="Weekly class periods" onPress={() => router.push({ pathname: "/child-timetable/[studentId]", params: { studentId, name } })} />
       </Card>
     </>
   );

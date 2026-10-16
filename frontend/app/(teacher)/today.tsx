@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { BookOpenText, Chalkboard, NotePencil, Student } from "phosphor-react-native";
+import { BookOpenText, Chalkboard, NotePencil, Student, Table } from "phosphor-react-native";
 import React from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -67,7 +67,8 @@ export default function TeacherToday() {
             <View>
               <Card style={{ paddingVertical: 0 }}>
                 <Row testID="teacher-homework-row" icon={<IconTile><NotePencil size={18} color={colors.onBrandTertiary} /></IconTile>} title="Homework" subtitle="Create, publish and track completion" onPress={() => router.push("/homework")} />
-                <Row testID="teacher-diary-row" last icon={<IconTile><BookOpenText size={18} color={colors.onBrandTertiary} /></IconTile>} title="Class diary" subtitle="Write today's lesson summaries and notes" onPress={() => router.push("/diary")} />
+                <Row testID="teacher-diary-row" icon={<IconTile><BookOpenText size={18} color={colors.onBrandTertiary} /></IconTile>} title="Class diary" subtitle="Write today's lesson summaries and notes" onPress={() => router.push("/diary")} />
+                <Row testID="teacher-timetable-row" last icon={<IconTile><Table size={18} color={colors.onBrandTertiary} /></IconTile>} title="My timetable" subtitle="Your periods for the week" onPress={() => router.push("/my-timetable")} />
               </Card>
             </View>
             <View>

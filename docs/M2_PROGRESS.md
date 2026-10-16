@@ -69,3 +69,11 @@ Staff attendance and leave approvals, homework with attachments, class diary, ti
 - API: `GET/POST /api/diary`, `PATCH/DELETE /api/diary/{id}`, `/api/diary/summary/today`, `/api/parent/children/{id}/diary?date=`.
 - UI: teacher Today → Class diary (section list → day stepper + add/edit/delete); parent Homework & diary card → child diary by day; Command Centre quick action with sections-updated-today.
 - Tests: `tests/test_m2_diary.py` (2), full backend 88 passed; testing agent PASS (iteration_7). Added `tests/conftest.py` to clear login rate-limit buckets per session.
+
+## Part B — Module 5 Timetable (built and tested)
+- Collections: `timetable_settings {school_id, periods[{no,start,end}]}` (default 8 periods Mon–Sat), `timetable_slots {school_id, section_id, day(1-6), period, subject_id, teacher_id, room}` (unique per section/day/period).
+- Conflict detection: teacher double-booking and room double-booking are rejected with 409; teacher must be assigned to the subject (or be class teacher) in the section; `/timetable/conflicts` audits legacy clashes. Bell schedule validated (HH:MM, ordered, non-overlapping); shrinking periods removes orphan slots.
+- API: `GET/PUT /api/timetable/settings`, `GET /api/timetable/sections/{id}`, `PUT/DELETE /api/timetable/sections/{id}/slots`, `/api/timetable/conflicts`, `/api/timetable/teacher/me`, `/api/timetable/teachers/{id}`, `/api/parent/children/{id}/timetable`.
+- Demo seed: timetable auto-generated clash-free from teacher assignments (DEMO_MODE only, idempotent).
+- UI: Command Centre → Timetable (bell schedule editor, class list → day tabs, tap-to-assign editor); teacher My timetable; parent child timetable.
+- Tests: `tests/test_m2_timetable.py` (2), full backend 90 passed; testing agent PASS (iteration_8). Cosmetic: shadow*/pointerEvents props migrated to boxShadow / style.pointerEvents.

@@ -37,8 +37,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           key={toast.id}
           entering={FadeInUp}
           exiting={FadeOutUp}
-          pointerEvents="none"
-          style={{ position: "absolute", top: insets.top + spacing.sm, left: spacing.lg, right: spacing.lg }}
+          style={{ pointerEvents: "none", position: "absolute", top: insets.top + spacing.sm, left: spacing.lg, right: spacing.lg }}
         >
           <View
             testID={`toast-${toast.tone}`}

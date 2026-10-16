@@ -457,11 +457,7 @@ const useStyles = makeStyles((c) => ({
     borderWidth: 1,
     borderColor: c.border,
     padding: spacing.lg,
-    shadowColor: "#0A192F",
-    shadowOpacity: 0.04,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 1,
+    boxShadow: "0px 4px 12px rgba(10, 25, 47, 0.04)",
   },
   input: {
     minHeight: 50,

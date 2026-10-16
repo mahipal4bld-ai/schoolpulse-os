@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { BookOpenText, Books, CalendarCheck, ChalkboardTeacher, IdentificationBadge, NotePencil, PaintBrush, Student, UserPlus, Users, UsersThree } from "phosphor-react-native";
+import { BookOpenText, Books, CalendarCheck, Table, ChalkboardTeacher, IdentificationBadge, NotePencil, PaintBrush, Student, UserPlus, Users, UsersThree } from "phosphor-react-native";
 import React from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -220,6 +220,9 @@ export default function CommandCentre() {
             ) : null}
             {can("academic.manage") ? (
               <Row testID="quick-diary" icon={<IconTile><BookOpenText size={18} color={colors.onBrandTertiary} /></IconTile>} title="Class diary" subtitle={diary.data ? `${diary.data.sections_with_diary}/${diary.data.sections_total} sections updated today` : "Daily class updates"} onPress={() => router.push("/diary")} />
+            ) : null}
+            {can("academic.manage") ? (
+              <Row testID="quick-timetable" icon={<IconTile><Table size={18} color={colors.onBrandTertiary} /></IconTile>} title="Timetable" subtitle="Bell schedule, class periods, clash checks" onPress={() => router.push("/timetable")} />
             ) : null}
             <Row testID="quick-academics" icon={<IconTile><Books size={18} color={colors.onBrandTertiary} /></IconTile>} title={t("academicSetup")} subtitle="Years, classes, sections and subjects" onPress={() => router.push("/academics")} />
             <Row testID="quick-people" last icon={<IconTile><UsersThree size={18} color={colors.onBrandTertiary} /></IconTile>} title={t("directory")} subtitle={c ? `${c.students} students · ${c.staff_members} staff accounts` : undefined} onPress={() => router.push("/people")} />
