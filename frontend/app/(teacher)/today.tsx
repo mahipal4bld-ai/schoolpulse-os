@@ -6,6 +6,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { StaffCheckIn } from "@/src/components/staff-check-in";
+import { TeacherWorkspace, useWorkspace } from "@/src/components/teacher-workspace";
 import { useTeacherDash } from "@/src/teacher-dash";
 import { useAuth } from "@/src/auth";
 import { SchoolLogo } from "@/src/components/school-logo";
@@ -24,6 +25,7 @@ export default function TeacherToday() {
   const router = useRouter();
   const bottomChrome = usesNativeTabs ? insets.bottom : 0;
   const q = useTeacherDash();
+  const ws = useWorkspace();
   if (!membership) return null;
   const school = membership.school;
   const d = q.data;
@@ -38,12 +40,13 @@ export default function TeacherToday() {
           </View>
         </View>
       </View>
-      <ScrollView refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => q.refetch()} tintColor={colors.brandPrimary} />} contentContainerStyle={{ padding: spacing.lg, paddingBottom: bottomChrome + spacing.xl, gap: spacing.xl }}>
+      <ScrollView refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => { q.refetch(); ws.refetch(); }} tintColor={colors.brandPrimary} />} contentContainerStyle={{ padding: spacing.lg, paddingBottom: bottomChrome + spacing.xl, gap: spacing.xl }}>
         <Animated.View entering={FadeInDown.duration(350)} style={{ gap: spacing.xs }}>
           <Txt variant="caption">{todayLabel()}</Txt>
           <Txt variant="title">{t(greetingKey())}, {me?.user.name.split(" ")[0]}</Txt>
         </Animated.View>
         <StaffCheckIn />
+        <TeacherWorkspace />
         {q.isLoading ? (
           <SkeletonList rows={3} />
         ) : q.isError ? (

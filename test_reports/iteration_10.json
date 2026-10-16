@@ -1,0 +1,37 @@
+{
+  "summary": "Milestone 2 Module 7 (Teacher Workspace) end-to-end PASS. Backend: tests/test_m2_workspace.py 1/1 passed (1.39s); full regression suite 93 passed + 1 skipped (40.46s) — zero regression across M1 + M2 attendance/staff/homework/diary/timetable/exams. Live /api/teacher/workspace returns date=2026-10-16, weekday=5, 6 periods, 3 todos (2 attendance + 1 diary) with full {period,subject_name,section_label,start,end,section_id,room} shape and counts dict; admin@sunrise.demo and parent@sunrise.demo both get 403 as required. UI (390x844, teacher@sunrise.demo on live Expo preview): Today tab shows ws-schedule-card with 6 period rows (ws-period-1..ws-period-6, each with 'P<n>', start time, subject, section label), ws-periods-count badge='6 periods'; ws-todo-card lists ws-todo-attendance-6ad09c1b1aad3ba7d4fb3a15 (Class 1-A), ws-todo-attendance-6ad09c1b1aad3ba7d4fb3ab9 (Class 5-A), ws-todo-diary-6ad09c1b1aad3ba7d4fb3a15 with ws-todo-count='3 pending'. Tapping ws-todo-diary-* navigated to /diary/<sectionId>; ws-todo-attendance-6ad09c1b1aad3ba7d4fb3ab9 navigated to /attendance/<sectionId> (mark-all-present + attendance-submit-button); after submitting attendance for Class 5-A and returning to Today, useFocusEffect refetched workspace and that attendance row disappeared — ws-todo-count flipped to '2 pending' and only Class 1-A attendance + Class 1-A diary remained. Empty-state ws-todo-empty branch inspected in /app/frontend/src/components/teacher-workspace.tsx (rendered when todo.length==0). Regression on Today tab: staff-checkin-card, teacher-stat-sections (5), teacher-stat-students (30), teacher-homework-row→/homework, teacher-diary-row→/diary, teacher-timetable-row→/my-timetable, teacher-exams-row→/exams, teacher-section-<id>→/attendance/<id>, and the three bottom tabs (tab-today/tab-classes/tab-teacher-profile) all still work. Seed data cleanup: deleted the single attendance doc created for section 6ad09c1b1aad3ba7d4fb3ab9 on 2026-10-16 (verified via pymongo: 1 doc removed).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "RN style warnings (carry-over)", "issue": "Expo web preview still emits 'shadow* style props are deprecated. Use boxShadow.' and 'props.pointerEvents is deprecated. Use style.pointerEvents' as cosmetic console warnings (no behaviour impact). Reference: /app/frontend/src/components/ui.tsx (Card/IconTile shadow usage)."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_m2_workspace.py",
+    "/app/test_reports/pytest/m2_workspace_results.xml",
+    "/app/test_reports/pytest/full_suite_m2_workspace.xml"
+  ],
+  "action_items": [
+    "(Optional, carry-over) Migrate deprecated RN style props shadow*→boxShadow and remove props.pointerEvents in ui.tsx to clean up Expo web console warnings."
+  ],
+  "critical_code_review_comments": [
+    "routes_workspace.py (~60 LOC) is a single endpoint and is clean and correct: scoped by need('teacher.workspace') so admin/parent 403 by default; teacher doc lookup via (school_id, user_id); timetable grid filtered by {teacher_id, day=today.isoweekday()}; period start/end mapped via a dict for O(1) lookup.",
+    "To-do construction correctly separates class-teacher sections (used for attendance to-dos) from the broader teacher_assignments set (used for diary + exam marks eligibility). taught_today is derived from the schedule, so diary to-dos only appear for sections actually taught today — matches the Module 7 spec.",
+    "Diary dedupe uses db.diary.distinct('section_id', {...created_by:ctx.user_id, deleted:{$ne:true}}); exam pending counter iterates db.exams(status='marks_open', section_ids∈my_sections) and skips (section,subject) pairs where exam_marks already exists OR teacher is neither assigned-for-subject nor class-teacher for that section — same gating as PUT /exams/{eid}/marks.",
+    "Response shape matches the pytest invariant and the frontend WS type exactly: {date,weekday,schedule[*{period,start,end,section_id,section_label,subject_name,room}],todo[*{kind,section_id?,title}],counts{periods_today,homework_due_today,homework_drafts,marks_sheets_pending,pending_leave,diary_written_today}} — no mongo _id leaks.",
+    "teacher-workspace.tsx wires useFocusEffect(()=>refetch(),[refetch]) so returning from attendance/diary/homework/exams refetches /teacher/workspace — observed working on live preview (Class 5-A attendance to-do cleared on return). Nothing else was coupled into state; the only data source is the useQuery, so stale updates aren't possible.",
+    "The row key for todo uses `${kind}-${section_id ?? i}` which is stable across refetches for the two non-section kinds (homework_drafts, marks) because they appear at most once each in the server response — safe.",
+    "today.tsx RefreshControl triggers both q.refetch() (useTeacherDash) and ws.refetch() on pull-to-refresh, keeping the stat cards and workspace in sync.",
+    "Minor nit (not blocking): routes_workspace.py imports bson via __import__('bson') inside the labels dict comprehension. Hoisting to a top-level `from bson import ObjectId` would be cleaner but has no runtime impact."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (1/1 M2 workspace; 93 passed + 1 skipped overall)", "frontend": "100% (schedule render, todo rows, navigation to attendance/diary/homework/exams, focus-based refetch after attendance submit, regression rows and tabs)"},
+  "seed_data_creation": "Marked all 6 students 'present' for Class 5-A (section 6ad09c1b1aad3ba7d4fb3ab9) on 2026-10-16 via UI to validate focus-based todo removal. Cleaned up post-run: db.attendance.delete_many({section_id, date=2026-10-16}) removed the 1 created doc. No other persistent changes.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "M2 Module 7 (Teacher Workspace) is production-ready. Single endpoint under /api: GET /teacher/workspace (need=teacher.workspace, admin/parent 403). Response: {date, weekday, schedule[], todo[], counts{...}}. Schedule items contain {day,period,section_id,section_label,subject_id,subject_name,teacher_id,teacher_name,room,start,end}. Todo kinds: 'attendance' (per class-teacher section not yet marked for the day), 'diary' (per section taught today without a diary entry by this user), 'homework_drafts' (singleton, count=draft HW by this user), 'marks' (singleton, count=exam section×subject sheets this teacher must enter that are empty). Frontend testIDs: ws-schedule-card, ws-periods-count, ws-period-<n>, ws-todo-card, ws-todo-count, ws-todo-<kind>-<sectionId|all>, ws-todo-empty, ws-hw-due. Component: /app/frontend/src/components/teacher-workspace.tsx; mounted via TeacherWorkspace inside /app/frontend/app/(teacher)/today.tsx. Focus refetch wired through useFocusEffect+useQuery, verified clearing attendance todo after submit. Demo linkage used for E2E: teacher@sunrise.demo (Neha Kulkarni) teaches English in Class 1-A on day 5 (6 periods) and is class-teacher for Class 1-A (6ad09c1b1aad3ba7d4fb3a15) and Class 5-A (6ad09c1b1aad3ba7d4fb3ab9). Today in IST at run time: Friday 2026-10-16 (weekday=5). Modules 1-6 unaffected.",
+  "rca_of_issue": "N/A — no bugs found."
+}

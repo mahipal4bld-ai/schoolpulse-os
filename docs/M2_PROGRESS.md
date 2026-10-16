@@ -86,3 +86,8 @@ Staff attendance and leave approvals, homework with attachments, class diary, ti
 - API: `/api/exams` (+ `/{id}`, `/{id}/marks`, `/{id}/status`, `/{id}/results`, `/summary/recent`, `/{id}/report-card/{student}.pdf`), `/api/parent/children/{id}/exams`.
 - UI: Examinations list/create, exam detail with progress + publish/re-open, marks entry, results with expandable subjects + report card; parent Exam results screen.
 - Tests: `tests/test_m2_exams.py` (2), full backend 92 passed; testing agent PASS (iteration_9).
+
+## Part B — Module 7 Teacher Workspace (built and tested)
+- `GET /api/teacher/workspace`: today's periods from the timetable (with bell times), plus a consolidated to-do list: attendance not marked for class-teacher sections, diary not written for sections taught today, unpublished homework drafts, and empty exam marks sheets. Also counts for homework due today and pending leave.
+- UI: teacher Today shows "Today's classes" and "To do" cards; each to-do opens the right screen, and the list refetches when the screen regains focus.
+- Tests: `tests/test_m2_workspace.py` (1), full backend 93 passed; testing agent PASS (iteration_10).
