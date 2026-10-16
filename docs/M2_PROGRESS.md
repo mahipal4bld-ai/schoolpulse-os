@@ -91,3 +91,8 @@ Staff attendance and leave approvals, homework with attachments, class diary, ti
 - `GET /api/teacher/workspace`: today's periods from the timetable (with bell times), plus a consolidated to-do list: attendance not marked for class-teacher sections, diary not written for sections taught today, unpublished homework drafts, and empty exam marks sheets. Also counts for homework due today and pending leave.
 - UI: teacher Today shows "Today's classes" and "To do" cards; each to-do opens the right screen, and the list refetches when the screen regains focus.
 - Tests: `tests/test_m2_workspace.py` (1), full backend 93 passed; testing agent PASS (iteration_10).
+
+## Part B — Module 8 Parent Academic Experience (built and tested)
+- `GET /api/parent/children/{id}/overview` returns, per child: today's attendance and this month's rate, today's periods, homework due (excluding work already marked done), today's diary and the latest published result. Verified guardians only.
+- UI: a "Today at school" card on the parent Family home with tiles that open homework, timetable, results and diary. It updates when the parent switches child.
+- Tests: `tests/test_m2_parent.py` (1), full backend 94 passed; testing agent PASS (iteration_11).

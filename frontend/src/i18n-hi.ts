@@ -310,6 +310,10 @@ export const hi: Record<string, string> = {
   "Invitation is invalid or expired": "आमंत्रण अमान्य या समाप्त है",
   "Storage is unavailable. Please try again later.": "स्टोरेज उपलब्ध नहीं है। बाद में प्रयास करें।",
   "Only JPG, PNG or WEBP images are allowed": "केवल JPG, PNG या WEBP चित्र अनुमत हैं",
+  // M2 Module 8 — parent overview
+  "Today at school": "आज स्कूल में",
+  "Learnt today": "आज सीखा",
+  "Periods today": "आज के पीरियड",
   // M2 Module 7 — teacher workspace
   "Today's classes": "आज की कक्षाएँ",
   "No periods scheduled today.": "आज कोई पीरियड निर्धारित नहीं।",

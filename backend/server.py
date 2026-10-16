@@ -23,6 +23,7 @@ from routes_diary import router as diary_router
 from routes_timetable import router as timetable_router
 from routes_exams import router as exams_router
 from routes_workspace import router as workspace_router
+from routes_parent import router as parent_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("schoolpulse")
@@ -75,6 +76,7 @@ api.include_router(diary_router)
 api.include_router(timetable_router)
 api.include_router(exams_router)
 api.include_router(workspace_router)
+api.include_router(parent_router)
 app.include_router(api)
 
 

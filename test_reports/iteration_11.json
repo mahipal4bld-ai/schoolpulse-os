@@ -1,0 +1,40 @@
+{
+  "summary": "Milestone 2 Module 8 (Parent Academic Experience) end-to-end PASS. Backend: tests/test_m2_parent.py 1/1 passed (1.88s); full regression suite 94 passed + 1 skipped (41.46s) - zero regression across M1 + M2 attendance/staff/homework/diary/timetable/exams/workspace. Live GET /api/parent/children/{id}/overview on preview URL returns {date, attendance{today,month_rate,days,absent}, timetable_today[6 periods], homework{due_count,due_today,next}, diary_today, latest_result} with correct Class 1-A section data for parent@sunrise.demo (kids Aarav Pillai, Ishaan Das) and for multi.parent@schoolpulse.demo (Zara Chauhan in Sunrise). Access rules verified: teacher@sunrise.demo -> 403, parent@greenfield.demo -> 403 against sunrise child. UI (390x844, parent@sunrise.demo on live Expo preview): Family home shows 'Today at school' section with the overview card and all four tiles ov-attendance ('—Today · —% this month'), ov-homework ('1Homework due · 1 today'), ov-periods ('6Periods today'), ov-result ('—No results yet'); after seeding a TEST published homework due today + TEST diary entry as teacher@sunrise.demo (English for section 6ad09c1b1aad3ba7d4fb3a15 = Class 1-A) the ov-diary row ('Learnt today • English: TEST ov diary') appeared, and switching child via child-switcher-button -> child-option-<ishaanId> updated the card (same homework count for Ishaan since the hw was section-wide, before mark-done). Navigation tested: ov-homework -> /child-homework/<sid>?name=..., ov-periods -> /child-timetable/<sid>, ov-result -> /child-exams/<sid>, ov-diary -> /child-diary/<sid>. multi.parent@schoolpulse.demo -> select-school -> Sunrise -> Zara Chauhan card shows all tiles including ov-diary with seeded content. Regression on parent home: parent-welcome-banner, child-attendance-today/present, child-homework-card still render after returning. One MINOR duplicate testID detected: family.tsx line 106 renders the Student overview Card with testID='child-overview-card' AND the ChildOverview inner Card uses the same testID='child-overview-card' - two nodes resolve to the same selector (observed count=2 in query_selector_all).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "ParentHome / ChildOverview", "issue": "Duplicate testID 'child-overview-card' on the page: /app/frontend/app/(parent)/family.tsx:106 uses testID='child-overview-card' for the Student overview Card AND /app/frontend/src/components/child-overview.tsx:38 reuses the same testID. Two matching nodes exist on the DOM, which can break targeted queries. Rename the inner one (e.g., 'today-at-school-card') or the family.tsx one.", "testID": "child-overview-card", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "RN style warnings (carry-over)", "issue": "Expo web preview still logs 'shadow* style props are deprecated. Use boxShadow.' and 'props.pointerEvents is deprecated' as cosmetic warnings (no behaviour impact). Reference: /app/frontend/src/components/ui.tsx (Card/IconTile shadow usage)."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_m2_parent.py",
+    "/app/test_reports/pytest/m2_parent_results.xml",
+    "/app/test_reports/pytest/full_suite_m2_parent.xml"
+  ],
+  "action_items": [
+    "Rename the duplicate testID on either family.tsx:106 (Student overview Card) or child-overview.tsx:38 (Today at school Card) so each resolves to a unique node (minor polish only).",
+    "(Optional carry-over) Migrate deprecated RN style props shadow*->boxShadow and remove props.pointerEvents in ui.tsx to clean up Expo web console warnings."
+  ],
+  "critical_code_review_comments": [
+    "routes_parent.py (~43 LOC) is a single endpoint, scoped by need('parent.portal'); guardian verification uses the existing _parent_links helper and raises 403 if the student_id is not in the parent's verified set - teacher/other-family 403 verified live.",
+    "Homework 'pending' is correctly filtered: db.homework finds published docs with due_date >= today, then Python-level excludes any that already have completion[student_id]=='done'. Matches the test assertion that marking done drops due_count back to baseline.",
+    "Diary filter correctly scopes to the student's section_id and today's date (IST) and excludes deleted docs; subject_name resolution falls back to None when subject_id is missing (optional field).",
+    "attendance.month_rate is computed only when days>0, else None - safe divide. Response shape matches the frontend Overview type in child-overview.tsx exactly.",
+    "latest_result is derived from parent_exams(student_id)['items'][0], reusing an existing endpoint for consistency - no duplicate scoring logic.",
+    "child-overview.tsx wires useQuery with key ['parent-overview', school_id, studentId] so switching child invalidates and refetches - verified live when switching between Aarav and Ishaan.",
+    "No mongodb _id leaks in the response; all id fields are string-cast (homework.next[*].id). No DRY/async issues.",
+    "Nit: family.tsx has a duplicate testID 'child-overview-card' (two Card wrappers share the same id)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (1/1 M2 parent; 94 passed + 1 skipped overall)", "frontend": "100% (tiles render, child switch refetches overview, all four navigation targets reached, diary row appears after seeding, legacy parent cards still work, multi-parent flow across schools works)"},
+  "seed_data_creation": "As teacher@sunrise.demo created TEST published homework ('TEST ov hw', English, section Class 1-A, due 2026-10-16) and TEST diary entry ('TEST ov diary', English, section Class 1-A, today) to validate ov-homework/ov-diary rendering. Cleaned up post-run: db.homework.delete_many({title:/^TEST /}) + db.diary.delete_many({topic:/^TEST /}) removed 1 doc each (verified).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "M2 Module 8 (Parent Academic Experience) is production-ready. Endpoint: GET /api/parent/children/{student_id}/overview (need=parent.portal, guardian-only; teacher/other-family 403). Response: {date, attendance{today,month_rate,days,absent}, timetable_today[{period,start,subject_name}], homework{due_count,due_today,next[{id,title,subject_name,due_date}]}, diary_today[{kind,topic,subject_name}], latest_result{id,name,percentage,grade,result,rank,class_size}|null}. Frontend testIDs: child-overview-card (DUPLICATED - also on family.tsx Student overview Card), ov-attendance, ov-homework, ov-periods, ov-result, ov-diary (only when diary_today non-empty). Nav targets: ov-homework -> /child-homework/[studentId], ov-periods -> /child-timetable/[studentId], ov-result -> /child-exams/[studentId], ov-diary -> /child-diary/[studentId]. Component: /app/frontend/src/components/child-overview.tsx; mounted in /app/frontend/app/(parent)/family.tsx between 'Student overview' and 'Attendance this month' sections. useQuery key is ['parent-overview', school_id, studentId] so child switcher triggers refetch. Demo data linkage for E2E seeding: teacher@sunrise.demo teaches English in Class 1-A (section 6ad09c1b1aad3ba7d4fb3a15) and Aarav Pillai (6ad09c1b1aad3ba7d4fb3a17) + Ishaan Das (6ad09c1b1aad3ba7d4fb3a1a) + Zara Chauhan (6ad09c1b1aad3ba7d4fb3a1d, Sunrise side of multi.parent@schoolpulse.demo) are all in that section. IST date at run time: Friday 2026-10-16. Modules 1-7 unaffected.",
+  "rca_of_issue": "N/A - only a minor duplicate-testID polish item on family.tsx vs child-overview.tsx."
+}
