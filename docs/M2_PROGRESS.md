@@ -96,3 +96,15 @@ Staff attendance and leave approvals, homework with attachments, class diary, ti
 - `GET /api/parent/children/{id}/overview` returns, per child: today's attendance and this month's rate, today's periods, homework due (excluding work already marked done), today's diary and the latest published result. Verified guardians only.
 - UI: a "Today at school" card on the parent Family home with tiles that open homework, timetable, results and diary. It updates when the parent switches child.
 - Tests: `tests/test_m2_parent.py` (1), full backend 94 passed; testing agent PASS (iteration_11).
+
+## Part B — Module 9 Owner Academic Intelligence (built and tested)
+- `GET /api/dashboard/academic?days=14|30` (clamped to 7–60 days). Every figure is computed live from records: daily attendance trend, lowest-attendance sections, frequent absentees (3+ days), homework and diary coverage per section, latest published exam averages and pass rates per section, staff punctuality, and pending leave.
+- UI: Command Centre → Academic insights screen with a 14/30-day toggle.
+- Tests: `tests/test_m2_insights.py` (1); testing agent PASS (iteration_12).
+
+## Part C — End-to-end workflow test
+- `tests/test_m2_e2e.py` runs one full school day: the teacher checks in, marks attendance, writes the diary and publishes homework with an attachment. The teacher applies for leave and the principal approves it. The principal creates an exam, the teacher enters marks and the principal publishes. The parent then sees the overview, downloads the attachment and gets the PDF report card. The owner's insights and the teacher's to-do list update to match.
+- Full backend suite: 96 passed, 1 skipped.
+
+## Part D — GitHub
+- This environment has no git remote configured. A local git commit is made after each module. Push to a development branch with the platform's "Save to GitHub" button; it never force-pushes over main.

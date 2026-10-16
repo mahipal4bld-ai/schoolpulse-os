@@ -29,10 +29,13 @@ Expo (native + web) → FastAPI `/api` → MongoDB. See `/app/docs/ARCHITECTURE.
 
 ## Review fixes + M2 Module 1 (Oct 2026)
 - Private-file no-store headers + parent/tenant denial, trusted-proxy XFF resolution, LogBox fix + scrubbed client error reporting, JWT secret prod guard. Student attendance (mark/correct/report/parent/owner). Backend 78 pass + restart test; jest 24; i18n 231/231. See /app/docs/M2_PROGRESS.md
-- Remaining M2: staff attendance & leave, homework, diary, timetable/calendar, exams/report cards, teacher/parent/owner academic views
+
+## Milestone 2 Academic Engine — COMPLETE (Oct 2026)
+- M2 modules 2–9: staff attendance & leave approvals, homework (attachments/completion), class diary, timetable (bell schedule, clash detection), exams (marks, publish lock, ranks/grades, branded PDF report cards), teacher workspace, parent "Today at school", owner academic insights. Part C e2e test. Backend 96 pass; jest 25; i18n 384/384; testing agent PASS iterations 5–12. Details /app/docs/M2_PROGRESS.md
+- GitHub: local commit per module; push via platform "Save to GitHub" (no remote configured here)
 
 ## Backlog
-- P0 (M2): Attendance, homework/diary, timetable & calendar, notices
-- P1: Fees & receipts, admissions CRM, exams/report cards, leave/help desk, PTM
+- P0: Calendar (holidays/events), notices/announcements, ChatGPT AI (homework/diary summaries — user said later in M2)
+- P1: Fees & receipts, admissions CRM, help desk, PTM
 - P2: AI teacher/info/owner briefing, transport & pickup, analytics, PWA/admissions site, custom domains, subscription billing, white-label builds
 - Hardening: distributed rate limit, refresh-token rotation, DPDP consent review, backups/restore drill, pen test
