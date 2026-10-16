@@ -109,6 +109,11 @@ export function fileUrl(id?: string | null) {
   return id ? `${API_BASE}/files/${id}` : null;
 }
 
+/** Private file link (homework attachments etc.) carrying the short-lived access token. */
+export function privateFileUrl(id: string) {
+  return `${API_BASE}/files/${id}${token ? `?token=${encodeURIComponent(token)}` : ""}`;
+}
+
 export async function uploadImage(uri: string, purpose: "logo" | "banner" | "photo", mime = "image/jpeg") {
   const name = `${purpose}.${mime.split("/")[1] || "jpg"}`;
   const form = new FormData();

@@ -303,3 +303,6 @@ async def ensure_indexes():
     await db.staff_attendance.create_index([("school_id", 1), ("date", 1)])
     await db.leave_requests.create_index([("school_id", 1), ("status", 1), ("from_date", 1)])
     await db.leave_requests.create_index([("school_id", 1), ("teacher_id", 1)])
+    await db.homework.create_index([("school_id", 1), ("section_id", 1), ("status", 1), ("due_date", 1)])
+    await db.homework.create_index([("school_id", 1), ("created_by", 1)])
+    await db.homework.create_index("attachments")

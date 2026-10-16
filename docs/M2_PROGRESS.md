@@ -54,3 +54,11 @@ Staff attendance and leave approvals, homework with attachments, class diary, ti
 - API: `/api/staff/me/today`, `/api/staff/me/check-in`, `GET/PUT /api/staff/attendance`, `/api/staff/summary/today`, `/api/staff/leave` (+ `/mine`, `/{id}/cancel`, `/{id}/decision`).
 - UI: teacher Today check-in card + My leave; Command Centre "Staff today" card + Staff attendance register + Leave requests approvals.
 - Tests: `tests/test_m2_staff.py` (5) — full backend 83 passed; jest 24 passed; testing agent PASS.
+
+## Part B — Module 3 Homework (built and tested)
+- Collection `homework {school_id, section_id, subject_id, title, description, assigned_date, due_date, attachments[file_id], status(draft|published|deleted), published_at, created_by, teacher_id, completion[{student_id,status(done|not_done|late),by,at}]}`.
+- Attachments: `POST /api/homework/attachments` (PDF/JPG/PNG/WEBP ≤10 MB, private object storage). Parents can download only attachments on *published* homework for their verified child's section (`parent_can_read_file`).
+- Rules: teachers assign only subjects they teach in a section (class teachers: any subject); admins anywhere; due date between today and +60 days; completion tracking only once published; soft delete; every action audited.
+- API: `/api/homework` (list/create), `/options`, `/summary`, `/{id}` (get/patch/delete), `/{id}/publish`, `/{id}/completion`, `/api/parent/children/{id}/homework?scope=upcoming|past`.
+- UI: teacher Today → Homework list/new/detail with completion; parent Family homework card + child homework screen; Command Centre homework quick action with weekly summary.
+- Tests: `tests/test_m2_homework.py` (3), full backend 86 passed; jest 25; testing agent PASS (iteration_6).

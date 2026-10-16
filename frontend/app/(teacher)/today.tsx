@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { Chalkboard, Student } from "phosphor-react-native";
+import { Chalkboard, NotePencil, Student } from "phosphor-react-native";
 import React from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -62,6 +62,11 @@ export default function TeacherToday() {
                 <IconTile><Student size={20} color={colors.onBrandTertiary} /></IconTile>
                 <Txt variant="title" testID="teacher-stat-students-value">{d.total_students}</Txt>
                 <Txt variant="caption">{t("students")}</Txt>
+              </Card>
+            </View>
+            <View>
+              <Card style={{ paddingVertical: 0 }}>
+                <Row testID="teacher-homework-row" last icon={<IconTile><NotePencil size={18} color={colors.onBrandTertiary} /></IconTile>} title="Homework" subtitle="Create, publish and track completion" onPress={() => router.push("/homework")} />
               </Card>
             </View>
             <View>

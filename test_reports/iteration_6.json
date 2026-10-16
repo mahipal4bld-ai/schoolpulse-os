@@ -1,0 +1,35 @@
+{
+  "summary": "Milestone 2 Module 3 (Homework Management) end-to-end PASS. Backend: tests/test_m2_homework.py 3/3 passed in 2.92s; full suite `pytest tests -q` 86 passed + 1 skipped in 34.51s. UI (mobile 390x844): Teacher teacher@sunrise.demo → /today → teacher-homework-row → /homework (empty state) → new-homework-button → /homework/new rendered with 5 section chips (hw-section-*), 6 subject chips (hw-subject-*) and 3 due chips (hw-due-*) plus hw-title-input/hw-description-input/hw-due-input; typed title+description and tapped hw-save-draft → redirected to /homework/{id} with hw-status-badge='draft' and 'Draft saved' toast; hw-publish-button → hw-status-badge='published' with 'Homework published to parents' toast; 6 hw-student-* rows rendered, hw-mark-all-done flipped all to Done (dirty state), hw-save-completion persisted ('Completion saved'); hw-delete-button opened hw-delete-sheet, hw-delete-confirm removed row and returned to /homework. Parent parent@sunrise.demo → /family: child-homework-card visible, child-homework-all → /child-homework/{studentId} with parent-hw-scope-upcoming/past segmented working (empty seed = 0 cards for both scopes, consistent with API). Owner owner@sunrise.demo → /command → quick-homework → /homework (academic.manage ⇒ scope=all) and GET /api/homework/summary returned {published_this_week:0, due_today:0, drafts:0, sections_with_homework_this_week:0, sections_total:12} as expected after cleanup. Spot API checks confirmed: GET /api/homework/options works for teacher (returns teacher's sections+subjects), POST /api/homework rejects due_date in past (400) and >60 days (400), POST /api/homework/attachments 201 for pdf and 400 for text/plain, parent attachment access blocked while draft (403) and allowed once published with Cache-Control: no-store, PUT /api/homework/{id}/completion rejected on draft (400). RBAC/isolation covered in test_m2_homework.py (teacher cannot assign outside their subject = 403, cross-school = 404, parent list = 403, parent can only read verified child's section). Cleanup done: 1 leftover TEST homework row and 4 recently uploaded homework files removed post-test. React Native deprecation warnings persist from iteration_4/5 (shadow*, pointerEvents) — carried over, non-blocking.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/homework (owner/principal)", "issues": ["Empty-state copy 'Create homework for your classes. Parents see it once published.' is teacher-centric; for owner/principal (scope=all) it's slightly off — minor copy nit, non-blocking."]}
+    ],
+    "react_native_issues": [
+      {"component": "RN style warnings", "issue": "Carry-over from iteration_4/5: 'shadow* style props are deprecated. Use boxShadow.' and 'props.pointerEvents is deprecated. Use style.pointerEvents' logged on homework screens. Cosmetic."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_m2_homework.py",
+    "/app/test_reports/pytest/m2_homework_results.xml"
+  ],
+  "action_items": [
+    "(Optional, cosmetic) Tweak /homework empty-state copy for owner/principal (scope=all) so it doesn't say 'Create homework for your classes.'",
+    "(Optional, carry-over) Migrate deprecated RN style props shadow*→boxShadow and props.pointerEvents→style.pointerEvents."
+  ],
+  "critical_code_review_comments": [
+    "routes_homework.py enforces _can_assign on create+update+get; soft-delete via status='deleted' and filter {$ne:'deleted'} is correctly applied everywhere; completion gated behind status=='published'; attachment ownership check (_check_files) binds attachments to uploader unless academic.manage; parent_can_read_file is restrictive (purpose=='homework' + published + verified guardian link + child in homework section) — strong defence in depth.",
+    "Frontend testID coverage matches the review-request spec exactly: teacher-homework-row, new-homework-button, hw-section-<id>, hw-subject-<id>, hw-title-input, hw-description-input, hw-due-*, hw-save-draft, hw-publish, hw-status-badge, hw-publish-button, hw-student-<id>, hw-mark-all-done, hw-save-completion, hw-delete-button, hw-delete-confirm, hw-attach-button, child-homework-card, child-homework-all, parent-hw-scope-upcoming/past, parent-hw-<id>, parent-hw-status-<id>, quick-homework.",
+    "List scope selection on frontend uses can('academic.manage') ? 'all' : 'mine' — matches backend permission matrix (owner/principal/school_admin have academic.manage).",
+    "Pydantic validation on HomeworkIn/HomeworkPatch enforces title length (3–120), description ≤3000, attachments ≤5; combined with _check_due (<=60 days, >= today) gives clear 400 errors."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (3/3 M2 homework, 86 passed + 1 skipped overall)", "frontend": "100% UI smoke flows (teacher create/draft/publish/completion/delete; parent view all + segmented; owner quick-homework)"},
+  "seed_data_creation": "No persistent seed. UI test created 1 TEST homework + draft file during run; cleaned up post-test (db.homework.delete_many({title:/^TEST/})=1, db.files.delete_many(purpose=homework, created_at≥1h)=4).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "M2 Module 3 (Homework) is production-ready. Key endpoints: GET /api/homework/options (teacher/admin only), POST /api/homework/attachments (pdf/jpg/png/webp ≤10MB), POST /api/homework (publish:bool, due 0..60d), GET /api/homework?scope=mine|all&status=draft|published, GET/PATCH/DELETE /api/homework/{id}, POST /api/homework/{id}/publish, PUT /api/homework/{id}/completion (published only, records of {student_id,status∈done|not_done|late}), GET /api/homework/summary (dashboard.owner), GET /api/parent/children/{id}/homework?scope=upcoming|past (verified guardian only), GET /api/files/{id} parent-allowed only when attachment is on a published homework for their verified child's section. Collections of interest for cleanup: homework (title prefix 'TEST ' auto-cleaned by pytest), files (purpose='homework'). Regression Modules 1 & 2 unaffected (full suite still 86 passed).",
+  "rca_of_issue": "N/A — no regressions found."
+}

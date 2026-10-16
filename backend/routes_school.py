@@ -274,8 +274,12 @@ async def get_file(file_id: str, user: Optional[dict] = Depends(optional_user)):
         # Private: auth + active STAFF membership in the file's school (parents/other tenants denied).
         m = await db.memberships.find_one({"user_id": str(user["_id"]), "school_id": f["school_id"],
                                            "status": "active"}) if user else None
-        if not m or m["role"] == "parent":
+        if not m:
             raise HTTPException(403, "Not permitted")
+        if m["role"] == "parent":
+            from routes_homework import parent_can_read_file
+            if not await parent_can_read_file(str(user["_id"]), f):
+                raise HTTPException(403, "Not permitted")
     data, ctype = await run_in_threadpool(storage.get_object, f["storage_path"])
     headers = {"X-Content-Type-Options": "nosniff"}
     if public:

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { Books, CalendarCheck, ChalkboardTeacher, IdentificationBadge, PaintBrush, Student, UserPlus, Users, UsersThree } from "phosphor-react-native";
+import { Books, CalendarCheck, ChalkboardTeacher, IdentificationBadge, NotePencil, PaintBrush, Student, UserPlus, Users, UsersThree } from "phosphor-react-native";
 import React from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -59,6 +59,10 @@ export default function CommandCentre() {
   const staff = useQuery({
     queryKey: ["staff-today", membership?.school_id],
     queryFn: () => api<{ total: number; present: number; late: number; absent: number; half_day: number; on_leave: number; unmarked: number; pending_leave: number }>("/staff/summary/today"),
+  });
+  const hw = useQuery({
+    queryKey: ["hw-summary", membership?.school_id],
+    queryFn: () => api<{ published_this_week: number; due_today: number; drafts: number; sections_with_homework_this_week: number; sections_total: number }>("/homework/summary"),
   });
   if (!membership) return null;
   const school = membership.school;
@@ -206,6 +210,9 @@ export default function CommandCentre() {
             ) : null}
             {can("staff.manage") ? (
               <Row testID="quick-leave-approvals" icon={<IconTile><CalendarCheck size={18} color={colors.onBrandTertiary} /></IconTile>} title="Leave requests" subtitle={staff.data?.pending_leave ? `${staff.data.pending_leave} awaiting decision` : "Approve or reject teacher leave"} onPress={() => router.push("/leave-approvals")} />
+            ) : null}
+            {can("academic.manage") ? (
+              <Row testID="quick-homework" icon={<IconTile><NotePencil size={18} color={colors.onBrandTertiary} /></IconTile>} title="Homework" subtitle={hw.data ? `${hw.data.published_this_week} published this week · ${hw.data.sections_with_homework_this_week}/${hw.data.sections_total} sections` : "All sections"} onPress={() => router.push("/homework")} />
             ) : null}
             <Row testID="quick-academics" icon={<IconTile><Books size={18} color={colors.onBrandTertiary} /></IconTile>} title={t("academicSetup")} subtitle="Years, classes, sections and subjects" onPress={() => router.push("/academics")} />
             <Row testID="quick-people" last icon={<IconTile><UsersThree size={18} color={colors.onBrandTertiary} /></IconTile>} title={t("directory")} subtitle={c ? `${c.students} students · ${c.staff_members} staff accounts` : undefined} onPress={() => router.push("/people")} />

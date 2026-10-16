@@ -10,6 +10,7 @@ import * as Haptics from "expo-haptics";
 import { api, fileUrl } from "@/src/api";
 import { useAuth } from "@/src/auth";
 import { SchoolLogo } from "@/src/components/school-logo";
+import { ChildHomeworkCard } from "@/src/components/child-homework-card";
 import { Sheet } from "@/src/components/sheet";
 import { Badge, Card, EmptyState, ErrorState, IconTile, Row, SectionTitle, SkeletonList, Txt } from "@/src/components/ui";
 import { UpcomingModules } from "@/src/components/upcoming-modules";
@@ -127,6 +128,7 @@ export default function ParentHome() {
                     </View>
                   </Card>
                 </View>
+                <ChildHomeworkCard studentId={c.id} name={`${c.first_name} ${c.last_name}`} />
                 {c.subjects.length ? (
                   <View>
                     <SectionTitle title={t("subjects")} />

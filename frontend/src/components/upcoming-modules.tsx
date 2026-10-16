@@ -6,13 +6,12 @@ import type { Role } from "@/src/types";
 
 const MODULES: Record<string, [string, string][]> = {
   parent: [
-    ["Homework & diary", "Assignments and class updates"],
+    ["Class diary", "Daily class updates"],
     ["Fees", "Dues, receipts and online payment"],
     ["Calendar & timetable", "Holidays, events and periods"],
     ["Messages", "Notices and teacher communication"],
   ],
   teacher: [
-    ["Homework", "Assign work and track submissions"],
     ["Examinations", "Marks entry and report cards"],
     ["AI Teacher Assistant", "Drafts grounded in your class data"],
   ],

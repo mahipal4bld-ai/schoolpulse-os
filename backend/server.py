@@ -18,6 +18,7 @@ from routes_auth import router as auth_router
 from routes_directory import router as directory_router
 from routes_school import router as school_router
 from routes_staff import router as staff_router
+from routes_homework import router as homework_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("schoolpulse")
@@ -65,6 +66,7 @@ api.include_router(school_router)
 api.include_router(directory_router)
 api.include_router(attendance_router)
 api.include_router(staff_router)
+api.include_router(homework_router)
 app.include_router(api)
 
 
