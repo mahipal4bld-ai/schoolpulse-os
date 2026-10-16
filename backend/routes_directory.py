@@ -612,6 +612,10 @@ async def teacher_dashboard(ctx: Ctx = Depends(need("teacher.workspace"))):
             if sub:
                 e["subjects"].append(sub["name"])
         e["is_class_teacher"] = e["is_class_teacher"] or a.get("is_class_teacher", False)
+    from routes_attendance import today_ist
+    day = today_ist().isoformat()
+    for sid_, e in by_section.items():
+        e["attendance_marked"] = bool(await db.attendance.find_one({"school_id": ctx.school_id, "section_id": sid_, "date": day}, {"_id": 1}))
     sections = sorted(by_section.values(), key=lambda x: x["label"])
     return {"teacher": out(t), "sections": sections, "total_students": sum(s["students"] for s in sections)}
 

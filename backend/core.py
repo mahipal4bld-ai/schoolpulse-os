@@ -37,6 +37,8 @@ class UnsafeConfigError(RuntimeError):
 
 def assert_safe_config():
     """Blocking startup check: demo authentication must never run in production."""
+    if APP_ENV == "production" and (len(JWT_SECRET) < 32 or "replace" in JWT_SECRET.lower()):
+        raise UnsafeConfigError("UNSAFE CONFIG: JWT_SECRET must be a unique random value of 32+ chars in production.")
     if APP_ENV == "production" and DEMO_MODE:
         raise UnsafeConfigError("UNSAFE CONFIG: DEMO_MODE=true is not allowed when APP_ENV=production. "
                                 "Set DEMO_MODE=false (or APP_ENV=staging/development for demos).")
@@ -215,9 +217,9 @@ ROLES = ["owner", "principal", "school_admin", "accountant", "admission_coordina
 _ALL_STAFF = {"school.view", "academic.view", "people.view"}
 PERMISSIONS: dict[str, set[str]] = {
     "owner": _ALL_STAFF | {"school.manage", "brand.manage", "academic.manage", "people.manage",
-                           "staff.manage", "audit.view", "dashboard.owner"},
+                           "staff.manage", "audit.view", "dashboard.owner", "leave.approve"},
     "principal": _ALL_STAFF | {"school.manage", "academic.manage", "people.manage", "staff.manage",
-                               "audit.view", "dashboard.owner"},
+                               "audit.view", "dashboard.owner", "leave.approve"},
     "school_admin": _ALL_STAFF | {"academic.manage", "people.manage", "staff.manage", "dashboard.owner"},
     "accountant": _ALL_STAFF | {"dashboard.owner"},
     "admission_coordinator": _ALL_STAFF | {"people.manage", "dashboard.owner"},
@@ -294,3 +296,10 @@ async def ensure_indexes():
         [("school_id", 1), ("teacher_id", 1), ("section_id", 1), ("subject_id", 1)], unique=True)
     await db.audit_logs.create_index([("school_id", 1), ("at", -1)])
     await db.invitations.create_index("token", unique=True)
+    await db.attendance.create_index([("school_id", 1), ("section_id", 1), ("date", 1)], unique=True)
+    await db.attendance.create_index([("school_id", 1), ("date", 1)])
+    await db.client_errors.create_index("expires_at", expireAfterSeconds=0)
+    await db.staff_attendance.create_index([("school_id", 1), ("teacher_id", 1), ("date", 1)], unique=True)
+    await db.staff_attendance.create_index([("school_id", 1), ("date", 1)])
+    await db.leave_requests.create_index([("school_id", 1), ("status", 1), ("from_date", 1)])
+    await db.leave_requests.create_index([("school_id", 1), ("teacher_id", 1)])

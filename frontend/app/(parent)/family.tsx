@@ -37,6 +37,11 @@ export default function ParentHome() {
     enabled: !!childId,
     queryFn: () => api<S & { class_teacher: { name: string } | null; subjects: { subject: string; teacher: string | null }[] }>(`/parent/children/${childId}`),
   });
+  const att = useQuery({
+    queryKey: ["parent-att", sid, childId],
+    enabled: !!childId,
+    queryFn: () => api<{ month: string; today: string | null; present: number; absent: number; late: number; days: number }>(`/parent/children/${childId}/attendance`),
+  });
   if (!membership) return null;
   const school = membership.school;
   const banner = fileUrl(school.brand.banner_file_id);
@@ -103,6 +108,23 @@ export default function ParentHome() {
                         <Txt variant="label" style={{ textTransform: "capitalize" }}>{v}</Txt>
                       </View>
                     ))}
+                  </Card>
+                </View>
+                <View>
+                  <SectionTitle title="Attendance this month" />
+                  <Card testID="child-attendance-card" style={{ gap: spacing.md }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                      <Txt variant="label">Today</Txt>
+                      <Badge testID="child-attendance-today" label={att.data?.today ? att.data.today : "Not marked yet"} tone={att.data?.today === "absent" ? "error" : att.data?.today === "late" ? "warning" : att.data?.today ? "success" : "neutral"} />
+                    </View>
+                    <View style={{ flexDirection: "row", gap: spacing.md }}>
+                      {(["present", "absent", "late"] as const).map((k) => (
+                        <View key={k} style={{ flex: 1, backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, padding: spacing.md }}>
+                          <Txt variant="heading" testID={`child-attendance-${k}`}>{att.data?.[k] ?? 0}</Txt>
+                          <Txt variant="caption">{k}</Txt>
+                        </View>
+                      ))}
+                    </View>
                   </Card>
                 </View>
                 {c.subjects.length ? (

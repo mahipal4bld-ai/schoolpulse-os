@@ -1,0 +1,36 @@
+{
+  "summary": "SchoolPulse OS Part A review-fixes + Milestone 2 Module 1 (Student Attendance) pass. Backend: `cd /app/backend && python -m pytest tests -q` => 78 passed, 1 skipped (as spec'd). Restart test `RUN_RESTART_TESTS=1 pytest tests/test_m11_hardening.py -n 0 -k restart -q` => 1 passed. Frontend: `npx jest` => 24/24 passed across 3 suites (api, auth, platform). `node scripts/i18n-check.js` => 231/231 Hindi strings, Missing: 0. UI (mobile 390x844): Teacher teacher@sunrise.demo logs in -> /today shows 5 'Attendance pending' badges with testID attendance-state-<sectionId>. Tapping/navigating a section opens /attendance/<sectionId>; attendance-row-SV1001 cycles P->A->L correctly on successive taps. 'mark-all-present' sets all to P. 'attendance-submit-button' posts -> 'attendance-submitted-badge' + 'Attendance submitted' confirmation visible. Changing a status after submit reveals 'attendance-reason-input' and 'Save correction' button saves successfully. 'attendance-report-button' opens monthly report sheet (Monthly report · 2026-10 · 1 days with per-student P/A/L breakdown). Parent parent@sunrise.demo Home shows 'child-attendance-card' reflecting today's status (0 present / 1 absent / 0 late — synced with the correction made as teacher). Owner owner@sunrise.demo /command shows 'attendance-today-card' with rate 83.3%, 1/12 sections marked, P5·A1·L0 (updating after submission). Hindi toggle via Settings -> 'language-toggle-hi' persists in localStorage; attendance screen strings translate correctly (जमा किया गया, सभी उपस्थित, सुधार सहेजें, 'उपस्थित → अनुपस्थित → देर से'), Today badges show दर्ज / उपस्थिति लंबित, Classes tab shows कक्षाएँ with 'उपस्थिति दर्ज करें →' link per class card. No console-blocking errors after LogBox.ignoreAllLogs removal (only benign RN warnings about deprecated 'shadow*' and 'pointerEvents' style props; ErrorBoundary + /api/client-errors reporter untouched). One transient 401 observed during a navigation (likely between-screen token-refresh race) but did not block flow. Cleanup: db.attendance.deleteMany + db.login_limits.deleteMany + scripts/cleanup_test_data.py all executed; demo schools intact (2 schools, 72 + 50 students).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "RN style warnings", "issue": "Benign deprecated-API console warnings: '\"shadow*\" style props are deprecated. Use boxShadow.' and 'props.pointerEvents is deprecated. Use style.pointerEvents' observed across screens. Non-blocking; worth cleaning up in a follow-up to future-proof React Native upgrade. Reference: appears from several styled components; grep for 'shadowColor|shadowOffset|shadowOpacity|shadowRadius' and 'pointerEvents=' props in /app/frontend/app and /app/frontend/src."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_m2_attendance.py",
+    "/app/backend/tests/test_review_fixes.py",
+    "/app/backend/tests/test_m11_hardening.py",
+    "/app/test_reports/pytest/m11_results.xml"
+  ],
+  "action_items": [
+    "(Optional, cosmetic) Replace deprecated RN style props: migrate shadow* -> boxShadow and props.pointerEvents -> style.pointerEvents to silence RN 0.76+ warnings.",
+    "No functional regressions — main agent can proceed to next milestone."
+  ],
+  "critical_code_review_comments": [
+    "Private files route (routes_school.py) returns Cache-Control 'private, no-store' + X-Content-Type-Options nosniff + Content-Disposition attachment, enforced tenant isolation (parent/other-tenant denied) — covered by test_review_fixes.",
+    "X-Forwarded-For trust: ratelimit.py only honours XFF when direct peer ∈ TRUSTED_PROXY_CIDRS; right-most untrusted hop is used — covered.",
+    "LogBox.ignoreAllLogs removed from _layout.tsx; scrubbed client error reporter POSTs to /api/client-errors from ErrorBoundary + global handler — ErrorBoundary intact and app renders.",
+    "Production guard: APP_ENV=production requires strong JWT_SECRET and DEMO_MODE!=true; aborts startup otherwise.",
+    "Attendance endpoints: GET/PUT /api/attendance/sections/{section_id}?date=, GET /api/attendance/reports/monthly, GET /api/attendance/summary/today, GET /api/parent/children/{id}/attendance — all exercised by test_m2_attendance (part of 78 passing)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (78 passed + 1 skipped + 1 restart)", "frontend": "100% jest (24/24) + 100% UI smoke flows (teacher, parent, owner, Hindi)"},
+  "seed_data_creation": "No new seed data. Post-test cleanup done: db.attendance.deleteMany({}) -> 1 removed; db.login_limits.deleteMany({}) -> 19 removed; scripts/cleanup_test_data.py -> removed 2 test schools, 2 orphan users, 3 test students, 1 test teacher. Demo state restored: 2 schools, 72 + 50 students.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Attendance testIDs: attendance-state-<sectionId> (badge on teacher /today), attendance-row-<admission_no> (cycles P->A->L on tap), mark-all-present, attendance-submit-button, attendance-submitted-badge, attendance-reason-input (after submit, when changing a status), attendance-save-correction, attendance-report-button (opens monthly report sheet), child-attendance-card (parent /family), attendance-today-card (owner /command). Date param format is YYYY-MM-DD. Teacher dashboard sections carry attendance_marked boolean -> drives badge state. Hindi strings for attendance already in /app/frontend/src/i18n-hi.ts. If demo logins get rate-limited, run db.login_limits.deleteMany({}).",
+  "rca_of_issue": "N/A — no regressions."
+}

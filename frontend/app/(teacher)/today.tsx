@@ -5,6 +5,7 @@ import { RefreshControl, ScrollView, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { StaffCheckIn } from "@/src/components/staff-check-in";
 import { useTeacherDash } from "@/src/teacher-dash";
 import { useAuth } from "@/src/auth";
 import { SchoolLogo } from "@/src/components/school-logo";
@@ -42,6 +43,7 @@ export default function TeacherToday() {
           <Txt variant="caption">{todayLabel()}</Txt>
           <Txt variant="title">{t(greetingKey())}, {me?.user.name.split(" ")[0]}</Txt>
         </Animated.View>
+        <StaffCheckIn />
         {q.isLoading ? (
           <SkeletonList rows={3} />
         ) : q.isError ? (
@@ -73,8 +75,8 @@ export default function TeacherToday() {
                     icon={<View style={{ width: 40, height: 40, borderRadius: radius.md, backgroundColor: colors.brandPrimary, alignItems: "center", justifyContent: "center" }}><Txt variant="label" color={colors.onBrandPrimary}>{s.label.split(" - ")[1]}</Txt></View>}
                     title={s.label}
                     subtitle={`${s.students} students · ${s.subjects.join(", ") || "General"}`}
-                    right={s.is_class_teacher ? <Badge label={t("classTeacher")} tone="brand" /> : undefined}
-                    onPress={() => router.push(`/roster/${s.section_id}`)}
+                    right={<Badge testID={`attendance-state-${s.section_id}`} label={s.attendance_marked ? "Marked" : "Attendance pending"} tone={s.attendance_marked ? "success" : "warning"} />}
+                    onPress={() => router.push(`/attendance/${s.section_id}`)}
                   />
                 ))}
               </Card>

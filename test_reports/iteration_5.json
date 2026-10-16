@@ -1,0 +1,32 @@
+{
+  "summary": "Milestone 2 Module 2 (Teacher & Staff Attendance + Leave Approvals) end-to-end pass. Backend: `pytest tests/test_m2_staff.py -v` => 5/5 passed; full suite `pytest tests -q` => 83 passed, 1 skipped in 32.99s. UI (mobile 390x844): Teacher teacher@sunrise.demo /today — staff-checkin-card visible, 'Check in now' tap -> staff-checkin-status badge 'late' (post 08:30 IST, expected), button disappears (idempotent); open-my-leave navigates to /my-leave; apply-leave-button opens sheet, leave-type-sick chip selected, from/to/reason filled, apply-leave-submit shows 'Leave request sent for approval' toast and card appears pending; leave-cancel-<id> cancels the pending leave (card removed). Admin admin@sunrise.demo /leave-approvals: sees leave list items (reason text visible) but zero leave-approve-* and zero leave-reject-* buttons — RBAC correct. Principal principal@sunrise.demo /command: staff-today-card visible with staff-pending-leave badge '1 leave request(s) awaiting approval'; quick-leave-approvals navigates; approve/reject buttons present (1 each); tapping leave-reject-<id> opens leave-decision-sheet, submitting leave-decision-submit without note yields red toast 'Add a note explaining why the leave is rejected' and sheet stays open (sheet.visible true); filling leave-decision-note with reason then submitting removes the row from Pending, Rejected filter chip shows the request with the submitted note. Quick-staff-attendance -> staff-register-list with 11 rows; tapping staff-row-<tid> cycles status (observed P -> A on single tap). Regression — Module 1 student attendance /attendance/<sectionId> still loads 6 attendance-row-* entries for teacher; parent@sunrise.demo lands at /family and owner@sunrise.demo lands at /command successfully. Transient 401s observed in console (token-refresh race during login/logout handoff) — non-blocking; same as iteration_4. React Native deprecation warnings persist (shadow*, pointerEvents) — carried over from iteration_4. Post-test cleanup done: leave_requests UI-test rows (2) removed, staff_attendance (1) reset, login_limits (46) cleared.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "RN style warnings", "issue": "Non-blocking deprecation warnings still logged on every screen render: '\"shadow*\" style props are deprecated. Use boxShadow.' and 'props.pointerEvents is deprecated. Use style.pointerEvents'. Already flagged in iteration_4; cosmetic. Reference: grep 'shadowColor|shadowOffset|shadowOpacity|shadowRadius|pointerEvents=' under /app/frontend/app and /app/frontend/src."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_m2_staff.py",
+    "/app/test_reports/pytest/m2_staff_results.xml"
+  ],
+  "action_items": [
+    "(Optional, cosmetic carry-over) Migrate deprecated RN style props: shadow* -> boxShadow and props.pointerEvents -> style.pointerEvents.",
+    "No functional blockers for Milestone 2 Module 2 — main agent can proceed to next module."
+  ],
+  "critical_code_review_comments": [
+    "routes_staff.py (M2 Module 2) exercised across self-check-in idempotency, register save with correction-requires-reason, future-date & cross-tenant 400s, leave create/overlap 409, admin cannot approve (403), owner & principal can approve/reject, cross-school principal 404, reject-needs-note (400), approved leave marks register on_leave and blocks /me/check-in — all 5 pytest cases green.",
+    "Frontend testIDs are complete and match review-request spec: staff-checkin-card, staff-checkin-button, staff-checkin-status, open-my-leave, apply-leave-button, leave-type-sick, leave-from-input, leave-to-input, leave-reason-input, apply-leave-submit, leave-cancel-<id>, staff-today-card, staff-pending-leave, quick-staff-attendance, staff-register-list, staff-row-<tid>, staff-status-<tid>, staff-save-button, quick-leave-approvals, leave-list, leave-approve-<id>, leave-reject-<id>, leave-decision-sheet, leave-decision-note, leave-decision-submit, leave-filter-* chips.",
+    "RBAC enforcement verified on the client AND server: school_admin sees the list but no approve/reject buttons (Button rendered only when can('leave.approve') is true) and server returns 403 if admin posts a decision — defence in depth."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (5/5 M2 staff, 83 passed + 1 skipped overall)", "frontend": "100% UI smoke flows (teacher, principal, admin, regression)"},
+  "seed_data_creation": "No persistent seed. Transient test leaves created during UI run cleaned up post-test (db.leave_requests.delete_many({reason: /UI test/}) -> 2; db.staff_attendance.delete_many({}) -> 1; db.login_limits.delete_many({}) -> 46).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Milestone 2 Module 2 (staff attendance + leave approvals) is production-ready. Key endpoints: GET /api/staff/me/today, POST /api/staff/me/check-in (idempotent, blocked when on_leave), GET /api/staff/attendance (role: staff.manage), PUT /api/staff/attendance (correction requires 'reason'), GET /api/staff/summary/today, POST /api/staff/leave, GET /api/staff/leave/mine, POST /api/staff/leave/{id}/cancel, GET /api/staff/leave?status=, POST /api/staff/leave/{id}/decision (owner/principal only, reject needs note). Check-in status after 08:30 IST = 'late' by design. Clean-up collections of interest: staff_attendance, leave_requests, login_limits.",
+  "rca_of_issue": "N/A — no regressions found. Transient 401s on login-boundary network calls are a pre-existing non-blocking race (see iteration_4 context)."
+}

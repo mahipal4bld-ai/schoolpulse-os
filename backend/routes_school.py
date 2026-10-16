@@ -269,14 +269,21 @@ async def get_file(file_id: str, user: Optional[dict] = Depends(optional_user)):
     f = await db.files.find_one({"_id": oid(file_id), "is_deleted": False})
     if not f:
         raise HTTPException(404, "File not found")
-    if not is_public_asset(f):
-        # Everything that is not an explicit brand asset is private: auth + active school membership.
-        if not user or not await db.memberships.find_one(
-                {"user_id": str(user["_id"]), "school_id": f["school_id"], "status": "active"}):
+    public = is_public_asset(f)
+    if not public:
+        # Private: auth + active STAFF membership in the file's school (parents/other tenants denied).
+        m = await db.memberships.find_one({"user_id": str(user["_id"]), "school_id": f["school_id"],
+                                           "status": "active"}) if user else None
+        if not m or m["role"] == "parent":
             raise HTTPException(403, "Not permitted")
     data, ctype = await run_in_threadpool(storage.get_object, f["storage_path"])
-    return Response(content=data, media_type=f.get("content_type") or ctype,
-                    headers={"Cache-Control": "public, max-age=86400"})
+    headers = {"X-Content-Type-Options": "nosniff"}
+    if public:
+        headers["Cache-Control"] = "public, max-age=86400"
+    else:
+        headers.update({"Cache-Control": "private, no-store, max-age=0", "Pragma": "no-cache", "Expires": "0",
+                        "Content-Disposition": "attachment", "Vary": "Authorization"})
+    return Response(content=data, media_type=f.get("content_type") or ctype, headers=headers)
 
 
 # ---------------------------------------------------------------- dashboards

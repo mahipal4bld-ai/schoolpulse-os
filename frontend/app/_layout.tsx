@@ -10,12 +10,13 @@ import { AuthProvider } from "@/src/auth";
 import { ErrorBoundary } from "@/src/components/error-boundary";
 import { ToastProvider } from "@/src/components/toast";
 import { loadLang } from "@/src/i18n";
+import { installGlobalHandlers } from "@/src/monitoring";
 import { queryClient } from "@/src/query-client";
 import { useTheme } from "@/src/theme";
 
-// Disable logbox errors etc so that users can see the app
-// and agent works as expected.
-LogBox.ignoreAllLogs(true);
+// Development diagnostics stay visible; only known-noisy third-party warnings are muted.
+LogBox.ignoreLogs(["Require cycle:", "Sending `onAnimatedValueUpdate`"]);
+installGlobalHandlers(); // production-safe, scrubbed error reporting
 
 export default function RootLayout() {
   const { colors } = useTheme();

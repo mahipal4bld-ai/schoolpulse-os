@@ -6,14 +6,12 @@ import type { Role } from "@/src/types";
 
 const MODULES: Record<string, [string, string][]> = {
   parent: [
-    ["Attendance", "Daily presence and monthly summary"],
     ["Homework & diary", "Assignments and class updates"],
     ["Fees", "Dues, receipts and online payment"],
     ["Calendar & timetable", "Holidays, events and periods"],
     ["Messages", "Notices and teacher communication"],
   ],
   teacher: [
-    ["Attendance marking", "One-tap daily attendance per section"],
     ["Homework", "Assign work and track submissions"],
     ["Examinations", "Marks entry and report cards"],
     ["AI Teacher Assistant", "Drafts grounded in your class data"],
@@ -21,7 +19,6 @@ const MODULES: Record<string, [string, string][]> = {
   staff: [
     ["Fees & receipts", "Structures, collections and reconciliation"],
     ["Admissions CRM", "Enquiries and conversion tracking"],
-    ["Attendance analytics", "Student and staff attendance trends"],
     ["Notices & communication", "Approved broadcasts to parents"],
     ["AI Owner Briefing", "Daily fact-grounded management summary"],
     ["Transport & pickup", "Routes and authorised pickup"],

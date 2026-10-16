@@ -36,9 +36,12 @@ export default function TeacherClasses() {
               </View>
               <Txt variant="caption">{s.subjects.join(" · ") || "General"} · {s.students} students</Txt>
               <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm }}>
-                <Badge label="Attendance · coming soon" />
+                <Badge label={s.attendance_marked ? "Marked" : "Attendance pending"} tone={s.attendance_marked ? "success" : "warning"} />
                 <Badge label="Homework · coming soon" />
               </View>
+              <Txt variant="label" color={colors.brandPrimary} testID={`open-attendance-${s.section_id}`} onPress={() => router.push(`/attendance/${s.section_id}`)} style={{ marginTop: spacing.sm, minHeight: 32 }}>
+                Mark attendance →
+              </Txt>
               <Txt variant="label" color={colors.brandPrimary} testID={`open-roster-${s.section_id}`} onPress={() => router.push(`/roster/${s.section_id}`)} style={{ marginTop: spacing.sm, minHeight: 32 }}>
                 Open roster →
               </Txt>

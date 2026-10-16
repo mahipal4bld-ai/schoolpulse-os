@@ -6,7 +6,7 @@ import { useAuth } from "@/src/auth";
 export type TeacherDash = {
   teacher: { name: string; designation: string } | null;
   total_students: number;
-  sections: { section_id: string; label: string; subjects: string[]; is_class_teacher: boolean; students: number }[];
+  sections: { section_id: string; label: string; subjects: string[]; is_class_teacher: boolean; students: number; attendance_marked?: boolean }[];
 };
 
 export function useTeacherDash() {

@@ -22,7 +22,7 @@ sys.path.insert(0, BACKEND)
 
 
 def ip():
-    return f"10.{uuid.uuid4().int % 250}.{uuid.uuid4().int % 250}.{uuid.uuid4().int % 250}"
+    return f"198.{uuid.uuid4().int % 250}.{uuid.uuid4().int % 250}.{uuid.uuid4().int % 250}"
 
 
 def attempt(email, pw, xff, base=API):
@@ -43,7 +43,7 @@ def user():
 
 def spawn(port, **env):
     e = {**os.environ, **env}
-    p = subprocess.Popen([sys.executable, "-m", "uvicorn", "server:app", "--port", str(port)], cwd=BACKEND, env=e,
+    p = subprocess.Popen([sys.executable, "-m", "uvicorn", "server:app", "--port", str(port), "--no-proxy-headers"], cwd=BACKEND, env=e,
                          stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
     for _ in range(60):
         try:

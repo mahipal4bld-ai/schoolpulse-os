@@ -5,6 +5,8 @@ IP across all accounts (password spraying). Each key gets progressive cooldowns 
 threshold is passed; cooldowns are capped and records expire, so users are never locked permanently.
 """
 import hashlib
+import ipaddress
+import os
 from datetime import timedelta
 
 from fastapi import HTTPException, Request
@@ -21,10 +23,37 @@ RULES = {
 RECORD_TTL = timedelta(hours=1)  # failure history forgotten after 1h of no failures
 
 
+def _trusted_networks():
+    raw = os.environ.get("TRUSTED_PROXY_CIDRS", "")
+    return [ipaddress.ip_network(c.strip(), strict=False) for c in raw.split(",") if c.strip()]
+
+
+def _is_trusted(addr: str, nets) -> bool:
+    try:
+        ip = ipaddress.ip_address(addr)
+    except ValueError:
+        return False
+    return any(ip in n for n in nets)
+
+
+def resolve_client_ip(peer: str, xff: str, nets) -> str:
+    """X-Forwarded-For is honoured ONLY when the direct peer is a configured trusted proxy.
+    We then walk the chain right-to-left, skipping trusted proxies; the first untrusted hop is the
+    client. Client-supplied (left-most) values cannot override the address the proxy appended."""
+    if not xff or not _is_trusted(peer, nets):
+        return peer
+    for hop in reversed([h.strip() for h in xff.split(",") if h.strip()]):
+        if not _is_trusted(hop, nets):
+            try:
+                return str(ipaddress.ip_address(hop))
+            except ValueError:
+                return peer  # malformed header: fall back to the proxy address
+    return peer
+
+
 def client_ip(request: Request) -> str:
-    # Behind the platform ingress the first X-Forwarded-For hop is the client.
-    xff = request.headers.get("x-forwarded-for", "")
-    return (xff.split(",")[0].strip() if xff else (request.client.host if request.client else "unknown"))[:64]
+    peer = request.client.host if request.client else "unknown"
+    return resolve_client_ip(peer, request.headers.get("x-forwarded-for", ""), _trusted_networks())[:64]
 
 
 def _key(kind: str, email: str, ip: str) -> str:

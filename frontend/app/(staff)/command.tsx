@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { Books, ChalkboardTeacher, PaintBrush, Student, UserPlus, Users, UsersThree } from "phosphor-react-native";
+import { Books, CalendarCheck, ChalkboardTeacher, IdentificationBadge, PaintBrush, Student, UserPlus, Users, UsersThree } from "phosphor-react-native";
 import React from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -52,6 +52,14 @@ export default function CommandCentre() {
   const router = useRouter();
   const bottomChrome = usesNativeTabs ? insets.bottom : 0;
   const q = useQuery({ queryKey: ["owner-dash", membership?.school_id], queryFn: () => api<Dash>("/dashboard/owner") });
+  const att = useQuery({
+    queryKey: ["att-today", membership?.school_id],
+    queryFn: () => api<{ sections_marked: number; sections_total: number; present: number; absent: number; late: number; rate: number | null; trend: { date: string; rate: number | null }[] }>("/attendance/summary/today"),
+  });
+  const staff = useQuery({
+    queryKey: ["staff-today", membership?.school_id],
+    queryFn: () => api<{ total: number; present: number; late: number; absent: number; half_day: number; on_leave: number; unmarked: number; pending_leave: number }>("/staff/summary/today"),
+  });
   if (!membership) return null;
   const school = membership.school;
   const c = q.data?.counts;
@@ -74,7 +82,7 @@ export default function CommandCentre() {
         </View>
       </View>
       <ScrollView
-        refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => q.refetch()} tintColor={colors.brandPrimary} />}
+        refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => { q.refetch(); att.refetch(); staff.refetch(); }} tintColor={colors.brandPrimary} />}
         contentContainerStyle={{ padding: spacing.lg, paddingBottom: bottomChrome + spacing.xl, gap: spacing.xl }}
       >
         <Animated.View entering={FadeInDown.duration(350)}>
@@ -117,6 +125,35 @@ export default function CommandCentre() {
               </View>
             </View>
 
+            {att.data ? (
+              <Card testID="attendance-today-card" style={{ gap: spacing.md }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <Txt variant="label">Today&apos;s attendance</Txt>
+                  <Txt variant="label" testID="attendance-today-rate">{att.data.rate === null ? "—" : `${att.data.rate}%`}</Txt>
+                </View>
+                <Txt variant="caption" testID="attendance-today-detail">
+                  {att.data.sections_marked}/{att.data.sections_total} · P {att.data.present} · A {att.data.absent} · L {att.data.late}
+                </Txt>
+                <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 6, height: 48 }}>
+                  {att.data.trend.map((d) => (
+                    <View key={d.date} style={{ flex: 1, height: d.rate === null ? 4 : Math.max(4, (d.rate / 100) * 48), borderRadius: 3, backgroundColor: d.rate === null ? colors.surfaceTertiary : colors.brandSecondary }} />
+                  ))}
+                </View>
+                <Txt variant="caption">Last 7 days · sections marked today</Txt>
+              </Card>
+            ) : null}
+            {staff.data ? (
+              <Card testID="staff-today-card" style={{ gap: spacing.md }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <Txt variant="label">Staff today</Txt>
+                  <Txt variant="label" testID="staff-today-present">{staff.data.present + staff.data.late + staff.data.half_day}/{staff.data.total}</Txt>
+                </View>
+                <Txt variant="caption" testID="staff-today-detail">
+                  Late {staff.data.late} · Absent {staff.data.absent} · Leave {staff.data.on_leave} · Unmarked {staff.data.unmarked}
+                </Txt>
+                {staff.data.pending_leave ? <Badge testID="staff-pending-leave" tone="warning" label={`${staff.data.pending_leave} leave request(s) awaiting approval`} /> : null}
+              </Card>
+            ) : null}
             <Card testID="guardian-verification-card" style={{ gap: spacing.md }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                 <Txt variant="label">Verified guardian links</Txt>
@@ -163,6 +200,12 @@ export default function CommandCentre() {
             ) : null}
             {can("people.manage") ? (
               <Row testID="quick-add-student" icon={<IconTile><UserPlus size={18} color={colors.onBrandTertiary} /></IconTile>} title={t("addStudent")} subtitle="Admission record with class placement" onPress={() => router.push("/student-new")} />
+            ) : null}
+            {can("staff.manage") ? (
+              <Row testID="quick-staff-attendance" icon={<IconTile><IdentificationBadge size={18} color={colors.onBrandTertiary} /></IconTile>} title="Staff attendance" subtitle="Daily register and check-ins" onPress={() => router.push("/staff-attendance")} />
+            ) : null}
+            {can("staff.manage") ? (
+              <Row testID="quick-leave-approvals" icon={<IconTile><CalendarCheck size={18} color={colors.onBrandTertiary} /></IconTile>} title="Leave requests" subtitle={staff.data?.pending_leave ? `${staff.data.pending_leave} awaiting decision` : "Approve or reject teacher leave"} onPress={() => router.push("/leave-approvals")} />
             ) : null}
             <Row testID="quick-academics" icon={<IconTile><Books size={18} color={colors.onBrandTertiary} /></IconTile>} title={t("academicSetup")} subtitle="Years, classes, sections and subjects" onPress={() => router.push("/academics")} />
             <Row testID="quick-people" last icon={<IconTile><UsersThree size={18} color={colors.onBrandTertiary} /></IconTile>} title={t("directory")} subtitle={c ? `${c.students} students · ${c.staff_members} staff accounts` : undefined} onPress={() => router.push("/people")} />

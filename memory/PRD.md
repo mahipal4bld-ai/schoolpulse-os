@@ -27,6 +27,10 @@ Expo (native + web) → FastAPI `/api` → MongoDB. See `/app/docs/ARCHITECTURE.
 ## M1.1 Hardening (Oct 2026)
 - Persistent Mongo rate limiting, rotating refresh sessions with reuse detection, logout-all/session list, APP_ENV/DEMO_MODE startup guard, verified backup/restore, central Hindi catalogue (100% static strings) + checker, 24 jest tests, file-visibility regression. Backend 69 tests pass. See /app/docs/M1_1_HARDENING.md
 
+## Review fixes + M2 Module 1 (Oct 2026)
+- Private-file no-store headers + parent/tenant denial, trusted-proxy XFF resolution, LogBox fix + scrubbed client error reporting, JWT secret prod guard. Student attendance (mark/correct/report/parent/owner). Backend 78 pass + restart test; jest 24; i18n 231/231. See /app/docs/M2_PROGRESS.md
+- Remaining M2: staff attendance & leave, homework, diary, timetable/calendar, exams/report cards, teacher/parent/owner academic views
+
 ## Backlog
 - P0 (M2): Attendance, homework/diary, timetable & calendar, notices
 - P1: Fees & receipts, admissions CRM, exams/report cards, leave/help desk, PTM
