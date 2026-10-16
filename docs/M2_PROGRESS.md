@@ -62,3 +62,10 @@ Staff attendance and leave approvals, homework with attachments, class diary, ti
 - API: `/api/homework` (list/create), `/options`, `/summary`, `/{id}` (get/patch/delete), `/{id}/publish`, `/{id}/completion`, `/api/parent/children/{id}/homework?scope=upcoming|past`.
 - UI: teacher Today → Homework list/new/detail with completion; parent Family homework card + child homework screen; Command Centre homework quick action with weekly summary.
 - Tests: `tests/test_m2_homework.py` (3), full backend 86 passed; jest 25; testing agent PASS (iteration_6).
+
+## Part B — Module 4 Class Diary (built and tested)
+- Collection `diary {school_id, section_id, kind(lesson|note), subject_id, date, topic, summary, created_by, deleted}`.
+- Rules: lesson entries need a subject the teacher teaches; notes need section access; no future dates; teachers ≤7 days back, admins any past date; only author/admin edits; soft delete; audited.
+- API: `GET/POST /api/diary`, `PATCH/DELETE /api/diary/{id}`, `/api/diary/summary/today`, `/api/parent/children/{id}/diary?date=`.
+- UI: teacher Today → Class diary (section list → day stepper + add/edit/delete); parent Homework & diary card → child diary by day; Command Centre quick action with sections-updated-today.
+- Tests: `tests/test_m2_diary.py` (2), full backend 88 passed; testing agent PASS (iteration_7). Added `tests/conftest.py` to clear login rate-limit buckets per session.

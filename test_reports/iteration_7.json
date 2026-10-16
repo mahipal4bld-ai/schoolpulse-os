@@ -1,0 +1,38 @@
+{
+  "summary": "Milestone 2 Module 4 (Digital Class Diary) end-to-end PASS. Backend: tests/test_m2_diary.py 2/2 passed in 2.42s; full suite 88 passed + 1 skipped in 36.00s (zero regression in m1/audit/edges/m2 attendance/staff/homework). Note: initial parallel-run of the full suite reported 17–35 failures all with 429 'Too many failed attempts' from the shared login_limits collection (leftover state, not a code issue); after clearing db.login_limits (85 docs removed), the suite is 88/88 green. UI (390x844): Teacher teacher@sunrise.demo → Today tab → teacher-diary-row → /diary (5 diary-section-* rows for teacher's assigned sections) → tapped first → /diary/{sectionId} shows day-label='Today · 16 Oct 2026', day-next disabled on today (opacity 0.3), day-prev shifts label to '15 Oct 2026'. diary-add-button opens sheet with diary-kind-lesson/diary-kind-note segmented, 6 diary-subject-* chips, diary-topic-input + diary-summary-input and diary-save. Created TEST lesson entry → rendered as diary-entry-{id}; diary-edit-{id} opened sheet pre-filled, updated summary saved and reflected in list; diary-delete-{id} → diary-delete-confirm removed entry. Also created a Class note (no subject) via diary-kind-note → appeared in list. Parent parent@sunrise.demo → Family home 'Homework & diary' card shows child-diary-row → /child-diary/{studentId} renders day-label, parent-diary-list and 2 entries including the teacher-written 'TEST ParentVisible lesson' + its summary (verified teacher-section ↔ parent-child link). Parent sees 0 edit/delete buttons (read-only), confirming author-only action gating. Owner owner@sunrise.demo → Command Centre quick-diary visible with 'Class diary 1/12 sections updated today' subtitle (matches /diary/summary/today response); tapping navigates to section list with 12 rows (academic.manage ⇒ all sections). Spot-check API behaviour matches pytest coverage: lesson needs subject_id (400), future date (400), teacher >7 days back (400) while admin accepts, author/academic.manage only for PATCH/DELETE, parent isolation (cross-child 403, cross-school 404). Regression spot-check: homework/attendance/staff tests re-ran green in the restored full-suite run. React Native deprecation warning 'shadow* style props deprecated. Use boxShadow' persists (carry-over from iterations 4–6; cosmetic only). TEST diary docs cleaned post-run (3 deleted).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "RN style warnings", "issue": "Carry-over from iteration_4..6: 'shadow* style props are deprecated. Use boxShadow.' logged on diary screens. Cosmetic; no behaviour impact."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_m2_diary.py",
+    "/app/test_reports/pytest/m2_diary_results.xml",
+    "/app/test_reports/pytest/full_suite_m2_diary.xml"
+  ],
+  "action_items": [
+    "(Optional, carry-over) Replace deprecated RN style props shadow*→boxShadow across ui.tsx/Card/IconTile to clear console warnings.",
+    "(Infra, non-blocking) Consider auto-clearing db.login_limits before the pytest suite boots (fixture in test_milestone1.py conftest) so a prior lock-out doesn't cascade across modules; today the sunrise owner can get locked out and poison 15+ tests until the limit expires."
+  ],
+  "critical_code_review_comments": [
+    "routes_diary.py (138 LOC) is tight and layered: _writer gates roles, _authorise reuses homework's _can_assign for subject/section ACL, _check_day enforces 7-day back-dating for teachers vs unlimited past for academic.manage. Soft-delete via deleted:true and {$ne:true} filter is correctly applied in list, parent view and summary.",
+    "GET /parent/children/{id}/diary strips created_by before returning (verified in test), preventing teacher identity leakage beyond author_name.",
+    "DiaryIn uses pydantic Field(min_length=2,max_length=150) on topic and max_length=2000 on summary — robust input validation.",
+    "Frontend diary.tsx DayStepper disables and dims day-next when value>=today, with hitSlop and 44x44 touch targets — meets mobile accessibility bar.",
+    "SectionDiary.save mutation sends subject_id:null when kind='note' (not undefined), avoiding backend 'Choose the subject' error.",
+    "mine(e)=can('academic.manage')||e.created_by===me.user.id matches backend _own() check verbatim — no RBAC drift between client and server.",
+    "ChildHomeworkCard aggregates both homework rows and child-diary-row into one 'Homework & diary' SectionTitle — clean parent IA.",
+    "Owner quick-diary subtitle uses live /diary/summary/today (sections_with_diary/sections_total) — identical to the aggregate pytest asserts in test_teacher_writes_lesson_and_note_parent_reads."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (2/2 M2 diary; 88 passed + 1 skipped overall after rate-limit reset)", "frontend": "100% UI smoke (teacher create/edit/delete lesson+note, day stepper, parent read-only visibility, owner quick-diary + section list)"},
+  "seed_data_creation": "Transient only. UI test created 3 TEST diary rows (lesson+note+parent-visible lesson); all cleaned post-test via db.diary.delete_many({topic:/^TEST /})=3. db.login_limits was cleared once (85 docs) to recover from stale lockout — see action item above.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "M2 Module 4 (Digital Class Diary) is production-ready. Endpoints: GET /api/diary?section_id&date (teacher/admin, requires _section_access), POST /api/diary (lesson needs subject_id; teacher date in [-7..0], admin any past; future rejected), PATCH/DELETE /api/diary/{id} (author or academic.manage only, also re-checks _check_day), GET /api/diary/summary/today (dashboard.owner), GET /api/parent/children/{id}/diary?date (parent.portal + verified guardian; strips created_by). TestIDs: teacher-diary-row (today), diary-section-<id>, diary-add-button, diary-kind-lesson|note, diary-subject-<id>, diary-topic-input, diary-summary-input, diary-save, diary-entry-<id>, diary-edit-<id>, diary-delete-<id>, diary-delete-confirm, diary-sheet, diary-delete-sheet, diary-list, parent-diary-list, child-diary-row, day-prev, day-next, day-label, quick-diary. Cleanup: db.diary (topic /^TEST /) auto-cleaned by pytest _cleanup(). If you see 429 'Too many failed attempts' blocking test_milestone1_edges/audit, run: await db.login_limits.delete_many({}). Modules 1–3 unaffected.",
+  "rca_of_issue": "N/A for M2.4 (no bugs). Side-note on initial 429 cascade: ratelimit.py persists failures in Mongo with 1h TTL and progressive cooldown (base 30s..cap 15min); when agents chain quick retries of auth bugs or testing scripts, the sunrise owner account can accumulate >5 failed attempts, blocking tests/test_milestone1_edges.py::owner() with a 7+ minute cooldown. Mitigation applied: cleared db.login_limits, after which full suite is 88 green. Longer-term, suggest a pytest session fixture to purge login_limits before each run."
+}

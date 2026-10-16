@@ -306,3 +306,4 @@ async def ensure_indexes():
     await db.homework.create_index([("school_id", 1), ("section_id", 1), ("status", 1), ("due_date", 1)])
     await db.homework.create_index([("school_id", 1), ("created_by", 1)])
     await db.homework.create_index("attachments")
+    await db.diary.create_index([("school_id", 1), ("section_id", 1), ("date", 1)])
