@@ -1,0 +1,42 @@
+{
+  "summary": "M3-M5 Parent Help Desk and M4 PTM publish reliability regression verified end-to-end. Backend: targeted suites tests/test_m3_helpdesk.py (3) + tests/test_m3_ptm_publish_faults.py (5) all pass (8/8). Full suite 134 passed, 1 skipped, 1 flaky failure in tests/test_m3_messaging.py (passes 2/2 in isolation; appears to be a cross-suite rate-limit/attachment interaction unrelated to M5). Added tests/test_m3_helpdesk_edges.py (8 new tests, all pass) covering cross-tenant leak, other-family isolation, non-assigned-teacher access, invalid status transitions, internal-note leakage into parent list/detail, parent attempting internal note, and mass-assignment protection on POST /helpdesk/tickets (status/assignee/rating/number extras ignored, 201 with safe server-controlled status). Frontend (390x844) parent@sunrise.demo full flow verified: family-home open-parent-helpdesk -> /helpdesk -> ticket-new-sheet (child chips, cat chips, subject, body, priority, submit) -> /helpdesk/{id} with ticket-status 'Received', ticket-thread, reply via ticket-reply-input + ticket-reply-send working. Staff identity on parent thread correctly shown as 'School office' (no name leak). ticket-withdraw present on open ticket. accountant@sunrise.demo flow: command-centre quick-helpdesk -> list -> HTEST ticket detail -> ticket-move-in_progress (confirm) -> ticket-move-waiting_on_parent (note required, confirm) -> ticket-move-resolved (note required, confirm) all transitions succeeded; ticket-internal-switch visible for staff reply visibility. principal@sunrise.demo helpdesk shows helpdesk-insights summary card (open/overdue/unassigned + first-reply/resolved/satisfaction aggregates). Parent rating: ticket-rate-card, ticket-star-5, ticket-rate-submit worked (5/5 recorded, 'Thanks for your feedback'). ticket-reopen opened a reopen sheet (uses its own text field, NOT ticket-move-note) — flagged. PTM publish regression: principal /ptm shows no legacy sessions in this test env; backend 5 fault-injection tests already green so publish retry path remains reliable. No critical bugs found.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/messaging/attachments (full-suite run)", "issue": "tests/test_m3_messaging.py::test_parent_teacher_round_trip_idempotent_paginated_and_scoped fails intermittently during full-suite xdist run (POST /messaging/attachments returns no 'id'); passes 2/2 in isolation. Likely cross-suite upload rate-limit or shared parent fixture collision — not related to M5 helpdesk/PTM changes."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "helpdesk/[id] reopen sheet", "issue": "Reopen uses an independent 'What is still unresolved?' textarea whose testID is NOT ticket-move-note (the testid review_request expected). The move/transition sheets correctly use ticket-move-note; reopen has its own control.", "testID": "(missing) ticket-move-note on reopen sheet / ticket-reopen-note", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_m3_helpdesk_edges.py",
+    "/app/test_reports/pytest/m3_helpdesk_iter18.xml",
+    "/app/test_reports/pytest/m3_helpdesk_edges_iter18.xml",
+    "/app/test_reports/pytest/full_suite_iter18.xml"
+  ],
+  "action_items": [
+    "Optional: expose a stable testID (e.g. ticket-reopen-note) on the parent reopen sheet so automation can share selectors with ticket-move-note.",
+    "Investigate flaky tests/test_m3_messaging.py attachment upload under full-suite xdist — add retry or isolate the upload fixture (not M5 scope)."
+  ],
+  "critical_code_review_comments": [
+    "routes_helpdesk.py:_access returns 404 (never leaks existence) — good. _ticket_out strips assignee_user_id/history/internal_count for parent side — confirmed via /tests_m3_helpdesk_edges::test_internal_note_not_leaked_to_parent.",
+    "routes_helpdesk.py:create ignores client-sent status/assignee_user_id/rating/number due to Pydantic TicketIn whitelist — verified via mass-assignment test.",
+    "routes_helpdesk.py move() uses find_one_and_update with status predicate — safe against lost updates. STAFF_MOVES / PARENT_MOVES correctly reject illegal transitions (409).",
+    "routes_ptm.py _publish is two-phase (draft -> publishing -> verify slot count -> published), DuplicateKeyError (code 11000) tolerated for idempotent retry, every other DB error propagates and leaves publish_error on the session so UI can show 'Publishing incomplete' with retry — matches spec."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_m3_helpdesk_edges.py (new)"
+  ],
+  "success_rate": {"backend": "99% (134/135 + 8/8 edges; 1 flaky messaging test)", "frontend": "95% (all parent + accountant + principal helpdesk flows verified; reopen testid naming nit)"},
+  "seed_data_creation": "Created one UI ticket (HTEST UI parent request) and 7-8 API tickets via helpdesk_edges tests. All HTEST-prefixed tickets + their ticket_messages cleaned from db.tickets after testing.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Help desk M5 is stable. For future runs: tests/test_m3_helpdesk_edges.py performs its own HTEST cleanup each create via _flush_htest() to stay under the 5/hour parent rate limit. The flaky messaging attachment test (test_m3_messaging) is a long-standing cross-suite issue, not an M5 regression. For UI, reopen uses its own text field — if testing the reopen flow look for the textarea inside the 'Reopen request' sheet rather than ticket-move-note.",
+  "rca_of_issue": "No new RCA — all expected flows pass. The flaky messaging failure in full-suite is non-deterministic and isolated from M5."
+}

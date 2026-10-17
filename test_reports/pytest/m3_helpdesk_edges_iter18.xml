@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="0.118" timestamp="2026-10-17T15:51:44.811034+00:00" hostname="agent-env-6620b497-4c56-4c6b-8af2-c408bc73902f"><testcase classname="" name="tests.test_m3_helpdesk_edges" time="0.000"><error message="collection failure">tests/test_m3_helpdesk_edges.py:6: in &lt;module&gt;
+    API = os.environ["EXPO_BACKEND_URL"].rstrip("/") + "/api"
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+&lt;frozen os&gt;:679: in __getitem__
+    ???
+E   KeyError: 'EXPO_BACKEND_URL'</error></testcase></testsuite></testsuites>

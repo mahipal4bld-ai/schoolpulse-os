@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { CalendarBlank, CalendarCheck, ChatsCircle, Megaphone } from "phosphor-react-native";
+import { CalendarBlank, CalendarCheck, ChatsCircle, Lifebuoy, Megaphone } from "phosphor-react-native";
 import React from "react";
 
 import { api } from "@/src/api";
@@ -21,6 +21,7 @@ export function ParentNoticesRow() {
   return (
     <Card style={{ paddingVertical: 0 }} testID="parent-notices-card">
       <Row testID="open-parent-messages" icon={<IconTile><ChatsCircle size={18} color={colors.onBrandTertiary} /></IconTile>} title="Messages" subtitle="Talk to your child's teachers" onPress={() => router.push("/messages")} />
+      <Row testID="open-parent-helpdesk" icon={<IconTile><Lifebuoy size={18} color={colors.onBrandTertiary} /></IconTile>} title="Help desk" subtitle="Ask the school office about fees, transport and more" onPress={() => router.push("/helpdesk")} />
       <Row testID="open-parent-ptm" icon={<IconTile><CalendarCheck size={18} color={colors.onBrandTertiary} /></IconTile>} title="Parent–teacher meetings" subtitle="Book and manage meeting slots" onPress={() => router.push("/ptm")} />
       <Row testID="open-parent-calendar" icon={<IconTile><CalendarBlank size={18} color={colors.onBrandTertiary} /></IconTile>} title="School calendar" subtitle={next ? `Next: ${next.title} · ${formatDate(next.start_date)}` : "Events, holidays and exams"} onPress={() => router.push("/calendar")} />
       <Row testID="open-parent-notices" last icon={<IconTile><Megaphone size={18} color={colors.onBrandTertiary} /></IconTile>} title="School notices" subtitle={q.data ? (q.data.unread ? `${q.data.unread} new${pendingAck ? ` · ${pendingAck} need acknowledgement` : ""}` : pendingAck ? `${pendingAck} need acknowledgement` : "You're up to date") : "Announcements from school"} onPress={() => router.push("/parent-notices")} />

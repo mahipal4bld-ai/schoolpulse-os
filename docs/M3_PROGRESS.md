@@ -107,8 +107,37 @@ Branch: `milestone-3-parent-connect`, based on `milestone-2-audit-remediation` /
   - The edit test exposed a stale-state risk with asynchronous native pickers. All picker setters now use functional state updates.
 - **Accessibility:** `Button` now exposes `accessibilityState.disabled`.
 
+## Module 5 — Parent help desk: DONE, tested
+- **Collections:**
+  - `tickets {school_id, number (per-school counter), guardian_user_id, student_id, section_id, class_name, category, subject, body, priority normal|high|urgent, status open|assigned|in_progress|waiting_on_parent|resolved|closed, assignee_user_id, sla_due_at, first_response_at, resolved_at, closed_at, reopen_count, rating, client_id, unread_parent/unread_staff, history[]}`
+  - `ticket_messages {ticket_id, author_user_id, side parent|staff, internal, body, client_id}`
+  - `counters`
+- **Indexes:**
+  - Unique: (guardian_user_id, client_id), (school_id, number), and (ticket_id, author_user_id, client_id).
+  - Queue indexes on status / SLA / assignee.
+- **Routing:** fees requests go to the accountant, academics to the section's class teacher, everything else to the school admin. Unassigned requests sit in an office queue.
+- **SLA:** urgent 4 h, high 24 h, normal 48 h, measured in clock hours.
+- **Access:**
+  - Parents see only their own requests about a child currently linked to them.
+  - Managers (`helpdesk.manage`: owner, principal, school admin) see all requests in the school.
+  - Other staff see only requests assigned to them, re-checked on every request.
+  - Anyone else gets a 404.
+  - Internal notes are never returned to parents, and staff appear to parents as "School office".
+- **Lifecycle:**
+  - Staff and parent transitions are checked against server-side tables.
+  - Each change is a conditional update on the current status, so of two conflicting changes exactly one wins and the other gets 409.
+  - Moving to "waiting on parent" or "resolved" requires a note.
+  - A parent reply moves "waiting on parent" back to "in progress".
+  - Parents can withdraw an open request, close a resolved one, reopen within 7 days (note required), and rate once (1–5).
+- **Limits:** idempotent creation and replies; at most 5 requests per parent per hour and 20 messages per user per 10 minutes.
+- **Records:** every action is audited and creates in-app notifications.
+- **Insights:** `/api/helpdesk/insights` reports open/overdue/unassigned counts, average first-response and resolution hours, satisfaction, and counts by category. Definitions are included in the response.
+- **Not done yet:** no attachments in tickets yet, no business-hours SLA calendar, and no email/SMS delivery.
+- **Tests:** `test_m3_helpdesk.py` (3) and `test_m3_helpdesk_edges.py` (8, added by the testing agent). Testing agent iteration_18 PASS.
+- **Flaky test:** one full-suite xdist run failed `test_m3_messaging` on an attachment upload. It passes in isolation, and an earlier run showed object storage returning a temporary 503. This is an external storage dependency, not a Module 5 regression.
+
 ## Remaining (not started)
-Module 5 Help desk · Module 6 Student leave & digital forms · Module 7 Classroom moments (consent-gated media) · Module 8 Notifications centre (builds on `notifications`) · Module 9 AI assistant (provider-gated, human approval) · Module 10 Parent engagement intelligence · Final acceptance journeys.
+Module 6 Student leave & digital forms · Module 7 Classroom moments (consent-gated media) · Module 8 Notifications centre (builds on `notifications`) · Module 9 AI assistant (provider-gated, human approval) · Module 10 Parent engagement intelligence · Final acceptance journeys.
 
 ## Test totals at this checkpoint (after reliability fix)
 - **Backend:** 132 passed, 1 skipped. The skipped restart test, run on its own with `RUN_RESTART_TESTS=1 -n 0 -k restart`, passes 1/1. One run hit a temporary object-storage 503 in `test_cannot_attach_other_schools_file`; it passed on rerun and in the next full run.

@@ -217,10 +217,10 @@ ROLES = ["owner", "principal", "school_admin", "accountant", "admission_coordina
 _ALL_STAFF = {"school.view", "academic.view", "people.view"}
 PERMISSIONS: dict[str, set[str]] = {
     "owner": _ALL_STAFF | {"school.manage", "brand.manage", "academic.manage", "people.manage",
-                           "staff.manage", "audit.view", "dashboard.owner", "leave.approve", "notices.manage", "ptm.manage"},
+                           "staff.manage", "audit.view", "dashboard.owner", "leave.approve", "notices.manage", "ptm.manage", "helpdesk.manage"},
     "principal": _ALL_STAFF | {"school.manage", "academic.manage", "people.manage", "staff.manage",
-                               "audit.view", "dashboard.owner", "leave.approve", "notices.manage", "ptm.manage"},
-    "school_admin": _ALL_STAFF | {"academic.manage", "people.manage", "staff.manage", "dashboard.owner", "notices.manage", "ptm.manage"},
+                               "audit.view", "dashboard.owner", "leave.approve", "notices.manage", "ptm.manage", "helpdesk.manage"},
+    "school_admin": _ALL_STAFF | {"academic.manage", "people.manage", "staff.manage", "dashboard.owner", "notices.manage", "ptm.manage", "helpdesk.manage"},
     "accountant": _ALL_STAFF | {"dashboard.owner"},
     "admission_coordinator": _ALL_STAFF | {"people.manage", "dashboard.owner"},
     "transport_coordinator": _ALL_STAFF | {"dashboard.owner"},
@@ -351,5 +351,12 @@ async def ensure_indexes():
     await db.ptm_followups.create_index([("school_id", 1), ("booking_id", 1)])
     await db.ptm_followups.create_index([("school_id", 1), ("session_id", 1), ("status", 1)])
     await db.notifications.create_index([("school_id", 1), ("user_id", 1), ("_id", -1)])
+    await db.tickets.create_index([("guardian_user_id", 1), ("client_id", 1)], unique=True)
+    await db.tickets.create_index([("school_id", 1), ("number", 1)], unique=True)
+    await db.tickets.create_index([("school_id", 1), ("status", 1), ("sla_due_at", 1)])
+    await db.tickets.create_index([("school_id", 1), ("assignee_user_id", 1), ("status", 1)])
+    await db.tickets.create_index([("school_id", 1), ("guardian_user_id", 1), ("_id", -1)])
+    await db.ticket_messages.create_index([("ticket_id", 1), ("author_user_id", 1), ("client_id", 1)], unique=True)
+    await db.ticket_messages.create_index([("ticket_id", 1), ("_id", 1)])
     await db.notifications.create_index([("user_id", 1), ("dedupe", 1)], unique=True,
                                         partialFilterExpression={"dedupe": {"$exists": True}})

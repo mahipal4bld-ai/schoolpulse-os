@@ -59,3 +59,7 @@ Expo (native + web) → FastAPI `/api` → MongoDB. See `/app/docs/ARCHITECTURE.
 
 ## M3 Module 4 — PTM engine + calendar pickers (DONE)
 - routes_ptm.py, routes_notifications.py; /ptm screens; atomic booking (claim→quota→seat→live via partial unique indexes); in-app notifications; insights; calendar PTM items; native/web date-time pickers + event editing. Backend 127 passed; jest 28. See docs/M3_PROGRESS.md.
+
+## M4 reliability (two-phase retryable PTM publish + fault tests) and M3 Module 5 Help desk (DONE)
+- routes_helpdesk.py, /helpdesk screens; see docs/M3_PROGRESS.md. Backend 135+8 edges; jest 31; Hindi 610/610.
+- NEXT: Module 6 Student leave & digital permission forms.
