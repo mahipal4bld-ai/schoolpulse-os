@@ -29,6 +29,8 @@ from routes_downloads import router as downloads_router
 from routes_notices import router as notices_router
 from routes_messaging import router as messaging_router
 from routes_events import router as events_router
+from routes_ptm import router as ptm_router
+from routes_notifications import router as notifications_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("schoolpulse")
@@ -100,6 +102,8 @@ api.include_router(downloads_router)
 api.include_router(notices_router)
 api.include_router(messaging_router)
 api.include_router(events_router)
+api.include_router(ptm_router)
+api.include_router(notifications_router)
 app.include_router(api)
 
 

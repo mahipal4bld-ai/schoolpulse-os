@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api, fileUrl } from "@/src/api";
 import { useAuth } from "@/src/auth";
+import { useInsights } from "@/src/components/ptm";
 import { SchoolLogo } from "@/src/components/school-logo";
 import { Badge, Card, ErrorState, IconTile, Row, SectionTitle, SkeletonList, Txt } from "@/src/components/ui";
 import { UpcomingModules } from "@/src/components/upcoming-modules";
@@ -236,6 +237,7 @@ export default function CommandCentre() {
             {can("notices.manage") ? (
               <Row testID="quick-notices" icon={<IconTile><Megaphone size={18} color={colors.onBrandTertiary} /></IconTile>} title="Notices" subtitle="Publish announcements, track reads and acknowledgements" onPress={() => router.push("/notices")} />
             ) : null}
+            {can("ptm.manage") ? <PtmQuickRow /> : null}
             <Row testID="quick-calendar" icon={<IconTile><CalendarBlank size={18} color={colors.onBrandTertiary} /></IconTile>} title="School calendar" subtitle={can("notices.manage") ? "Publish events and holidays, see exam dates" : "Events, holidays and exams"} onPress={() => router.push("/calendar")} />
             <Row testID="quick-academics" icon={<IconTile><Books size={18} color={colors.onBrandTertiary} /></IconTile>} title={t("academicSetup")} subtitle="Years, classes, sections and subjects" onPress={() => router.push("/academics")} />
             <Row testID="quick-people" last icon={<IconTile><UsersThree size={18} color={colors.onBrandTertiary} /></IconTile>} title={t("directory")} subtitle={c ? `${c.students} students · ${c.staff_members} staff accounts` : undefined} onPress={() => router.push("/people")} />
@@ -264,4 +266,13 @@ export default function CommandCentre() {
       </ScrollView>
     </View>
   );
+}
+
+function PtmQuickRow() {
+  const { membership } = useAuth();
+  const { colors } = useTheme();
+  const router = useRouter();
+  const ins = useInsights(membership?.school_id, "");
+  const d = ins.data;
+  return <Row testID="quick-ptm" icon={<IconTile><CalendarCheck size={18} color={colors.onBrandTertiary} /></IconTile>} title="Parent–teacher meetings" subtitle={d ? `${d.booked} booked · ${Math.round(d.utilization * 100)}% utilization · ${d.followups_pending} follow-ups open` : "Sessions, bookings and insights"} onPress={() => router.push("/ptm")} />;
 }

@@ -50,7 +50,8 @@
         {
           "photosPermission": "Choose your school's logo and banner photos"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true

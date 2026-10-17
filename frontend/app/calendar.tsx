@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { addMonths, endOfMonth, startOfMonth } from "date-fns";
+import { useRouter } from "expo-router";
 import { CalendarBlank, Plus } from "phosphor-react-native";
 import React, { useState } from "react";
 import { FlatList, RefreshControl, View } from "react-native";
@@ -24,6 +25,8 @@ export default function SchoolCalendar() {
   const [child, setChild] = useState("all");
   const [open, setOpen] = useState<CalItem | null>(null);
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<CalItem | null>(null);
+  const router = useRouter();
   const kids = useQuery({ queryKey: ["parent-children", membership?.school_id], enabled: parent, queryFn: () => api<{ items: { id: string; first_name: string }[] }>("/parent/children") });
   const range = `start=${iso(month)}&end=${iso(endOfMonth(month))}${parent && child !== "all" ? `&student_id=${child}` : ""}`;
   const q = useQuery({ queryKey: ["calendar", membership?.school_id, range], queryFn: () => api<{ items: CalItem[] }>(`/calendar?${range}`) });
@@ -38,7 +41,7 @@ export default function SchoolCalendar() {
       <FlatList
         testID="calendar-list"
         data={q.isLoading || q.isError ? [] : shown}
-        keyExtractor={(i) => `${i.kind}-${i.id}`}
+        keyExtractor={(i) => `${i.kind}-${i.id}-${i.start_date}`}
         refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => q.refetch()} tintColor={colors.brandPrimary} />}
         contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + (manager ? 120 : spacing.xl), gap: spacing.md, flexGrow: 1 }}
         ListHeaderComponent={
@@ -57,8 +60,8 @@ export default function SchoolCalendar() {
           <Button testID="new-event-button" title="New event" icon={<Plus size={18} color={colors.onBrandPrimary} />} onPress={() => setCreating(true)} />
         </View>
       ) : null}
-      {manager ? <EventForm visible={creating} day={day ?? iso(new Date())} onClose={() => setCreating(false)} /> : null}
-      <EventDetail item={open} manager={manager} onClose={() => setOpen(null)} />
+      {manager ? <EventForm visible={creating || !!editing} initial={editing} day={day ?? iso(new Date())} onClose={() => { setCreating(false); setEditing(null); }} /> : null}
+      <EventDetail item={open} manager={manager} onClose={() => setOpen(null)} onEdit={(i) => { setOpen(null); setEditing(i); }} onOpenPtm={(i) => { setOpen(null); router.push(`/ptm/${i.id}`); }} />
     </View>
   );
 }

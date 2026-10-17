@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { BookOpenText, CalendarBlank, Chalkboard, ChatsCircle, Exam, NotePencil, Student, Table } from "phosphor-react-native";
+import { BookOpenText, CalendarBlank, CalendarCheck, Chalkboard, ChatsCircle, Exam, NotePencil, Student, Table } from "phosphor-react-native";
 import React from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -73,6 +73,7 @@ export default function TeacherToday() {
                 <Row testID="teacher-diary-row" icon={<IconTile><BookOpenText size={18} color={colors.onBrandTertiary} /></IconTile>} title="Class diary" subtitle="Write today's lesson summaries and notes" onPress={() => router.push("/diary")} />
                 <Row testID="teacher-timetable-row" icon={<IconTile><Table size={18} color={colors.onBrandTertiary} /></IconTile>} title="My timetable" subtitle="Your periods for the week" onPress={() => router.push("/my-timetable")} />
                 <Row testID="teacher-messages-row" icon={<IconTile><ChatsCircle size={18} color={colors.onBrandTertiary} /></IconTile>} title="Parent messages" subtitle="Reply to parents of your classes" onPress={() => router.push("/messages")} />
+                <Row testID="teacher-ptm-row" icon={<IconTile><CalendarCheck size={18} color={colors.onBrandTertiary} /></IconTile>} title="Parent–teacher meetings" subtitle="Your PTM schedule, availability and notes" onPress={() => router.push("/ptm")} />
                 <Row testID="teacher-calendar-row" icon={<IconTile><CalendarBlank size={18} color={colors.onBrandTertiary} /></IconTile>} title="School calendar" subtitle="Events, holidays and exams for your classes" onPress={() => router.push("/calendar")} />
                 <Row testID="teacher-exams-row" last icon={<IconTile><Exam size={18} color={colors.onBrandTertiary} /></IconTile>} title="Examinations" subtitle="Enter marks and view results" onPress={() => router.push("/exams")} />
               </Card>

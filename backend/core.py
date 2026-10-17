@@ -217,10 +217,10 @@ ROLES = ["owner", "principal", "school_admin", "accountant", "admission_coordina
 _ALL_STAFF = {"school.view", "academic.view", "people.view"}
 PERMISSIONS: dict[str, set[str]] = {
     "owner": _ALL_STAFF | {"school.manage", "brand.manage", "academic.manage", "people.manage",
-                           "staff.manage", "audit.view", "dashboard.owner", "leave.approve", "notices.manage"},
+                           "staff.manage", "audit.view", "dashboard.owner", "leave.approve", "notices.manage", "ptm.manage"},
     "principal": _ALL_STAFF | {"school.manage", "academic.manage", "people.manage", "staff.manage",
-                               "audit.view", "dashboard.owner", "leave.approve", "notices.manage"},
-    "school_admin": _ALL_STAFF | {"academic.manage", "people.manage", "staff.manage", "dashboard.owner", "notices.manage"},
+                               "audit.view", "dashboard.owner", "leave.approve", "notices.manage", "ptm.manage"},
+    "school_admin": _ALL_STAFF | {"academic.manage", "people.manage", "staff.manage", "dashboard.owner", "notices.manage", "ptm.manage"},
     "accountant": _ALL_STAFF | {"dashboard.owner"},
     "admission_coordinator": _ALL_STAFF | {"people.manage", "dashboard.owner"},
     "transport_coordinator": _ALL_STAFF | {"dashboard.owner"},
@@ -335,3 +335,21 @@ async def ensure_indexes():
     await db.download_grants.create_index("expires_at", expireAfterSeconds=0)
     await db.events.create_index([("school_id", 1), ("status", 1), ("start_date", 1)])
     await db.events.create_index([("school_id", 1), ("end_date", 1)])
+    await db.ptm_sessions.create_index([("school_id", 1), ("status", 1), ("dates", 1)])
+    await db.ptm_slots.create_index([("session_id", 1), ("teacher_id", 1), ("start_at", 1)], unique=True)
+    await db.ptm_slots.create_index([("school_id", 1), ("teacher_id", 1), ("start_at", 1), ("end_at", 1)])
+    active = {"partialFilterExpression": {"active": True}}
+    await db.ptm_bookings.create_index([("guardian_user_id", 1), ("client_id", 1)], unique=True)
+    await db.ptm_bookings.create_index([("session_id", 1), ("student_id", 1), ("teacher_id", 1)], unique=True,
+                                       name="one_live_meeting_per_child_teacher", **active)
+    await db.ptm_bookings.create_index([("guardian_user_id", 1), ("start_at", 1)], unique=True,
+                                       name="guardian_not_double_booked", **active)
+    await db.ptm_bookings.create_index([("school_id", 1), ("session_id", 1), ("status", 1)])
+    await db.ptm_bookings.create_index([("school_id", 1), ("teacher_id", 1), ("date", 1)])
+    await db.ptm_quotas.create_index([("session_id", 1), ("key", 1)], unique=True)
+    await db.ptm_unavailability.create_index([("school_id", 1), ("teacher_id", 1), ("start_at", 1)])
+    await db.ptm_followups.create_index([("school_id", 1), ("booking_id", 1)])
+    await db.ptm_followups.create_index([("school_id", 1), ("session_id", 1), ("status", 1)])
+    await db.notifications.create_index([("school_id", 1), ("user_id", 1), ("_id", -1)])
+    await db.notifications.create_index([("user_id", 1), ("dedupe", 1)], unique=True,
+                                        partialFilterExpression={"dedupe": {"$exists": True}})

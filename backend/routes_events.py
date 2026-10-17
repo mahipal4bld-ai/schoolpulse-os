@@ -200,7 +200,8 @@ async def calendar(start: date, end: date, student_id: Optional[str] = None, ctx
         # families/staff see live events, plus cancellations of events that had been announced
         filt["$and"] = [{"$or": [{"status": "published"}, {"status": "cancelled", "published_at": {"$ne": None}}]}]
     events = [_event_out(x, manager) for x in await db.events.find(filt).sort([("start_date", 1), ("start_time", 1)]).to_list(300)]
-    items = events + await _exam_items(ctx, secs, s, e)
+    from routes_ptm import ptm_calendar_items
+    items = events + await _exam_items(ctx, secs, s, e) + await ptm_calendar_items(ctx, secs, s, e, manager)
     items.sort(key=lambda i: (i["start_date"], i.get("start_time") or ""))
     return {"items": items}
 

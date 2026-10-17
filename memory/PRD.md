@@ -56,3 +56,6 @@ Expo (native + web) → FastAPI `/api` → MongoDB. See `/app/docs/ARCHITECTURE.
 - Frontend `/calendar` month grid + agenda, create/detail sheets; entry rows for staff, teacher, parent.
 - Leader read-only on escalated conversations (UI hidden + backend 403).
 - Tests: test_m3_events.py, test_m3_events_edges.py; full suite 110 passed.
+
+## M3 Module 4 — PTM engine + calendar pickers (DONE)
+- routes_ptm.py, routes_notifications.py; /ptm screens; atomic booking (claim→quota→seat→live via partial unique indexes); in-app notifications; insights; calendar PTM items; native/web date-time pickers + event editing. Backend 127 passed; jest 28. See docs/M3_PROGRESS.md.
