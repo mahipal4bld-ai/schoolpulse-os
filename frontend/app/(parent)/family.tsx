@@ -12,6 +12,7 @@ import { useAuth } from "@/src/auth";
 import { SchoolLogo } from "@/src/components/school-logo";
 import { ChildHomeworkCard } from "@/src/components/child-homework-card";
 import { ChildOverview } from "@/src/components/child-overview";
+import { ParentNoticesRow } from "@/src/components/parent-notices-row";
 import { Sheet } from "@/src/components/sheet";
 import { Badge, Card, EmptyState, ErrorState, IconTile, Row, SectionTitle, SkeletonList, Txt } from "@/src/components/ui";
 import { UpcomingModules } from "@/src/components/upcoming-modules";
@@ -112,6 +113,7 @@ export default function ParentHome() {
                     ))}
                   </Card>
                 </View>
+                <ParentNoticesRow />
                 <ChildOverview studentId={c.id} name={`${c.first_name} ${c.last_name}`} />
                 <View>
                   <SectionTitle title="Attendance this month" />

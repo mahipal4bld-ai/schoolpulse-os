@@ -46,6 +46,18 @@ async def can_read_file(user_id: str, role: str, f: dict) -> bool:
             from routes_homework import parent_can_read_file
             return await parent_can_read_file(user_id, f)
         return False
+    if f.get("purpose") == "notice":
+        if role in ACADEMIC_LEADERS:
+            return True
+        if role == "parent":
+            from core import PERMISSIONS, Ctx
+            from routes_notices import _parent_filter, _parent_scope
+            u = await db.users.find_one({"_id": oid(user_id)})
+            ctx = Ctx(user=u, user_id=user_id, school_id=f["school_id"], role=role, perms=PERMISSIONS["parent"])
+            secs, classes = await _parent_scope(ctx)
+            return bool(secs) and bool(await db.notices.find_one(
+                {**_parent_filter(ctx, secs, classes), "attachments": str(f["_id"])}, {"_id": 1}))
+        return False
     return f.get("uploaded_by") == user_id or role in {"owner", "principal"}
 
 

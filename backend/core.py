@@ -217,10 +217,10 @@ ROLES = ["owner", "principal", "school_admin", "accountant", "admission_coordina
 _ALL_STAFF = {"school.view", "academic.view", "people.view"}
 PERMISSIONS: dict[str, set[str]] = {
     "owner": _ALL_STAFF | {"school.manage", "brand.manage", "academic.manage", "people.manage",
-                           "staff.manage", "audit.view", "dashboard.owner", "leave.approve"},
+                           "staff.manage", "audit.view", "dashboard.owner", "leave.approve", "notices.manage"},
     "principal": _ALL_STAFF | {"school.manage", "academic.manage", "people.manage", "staff.manage",
-                               "audit.view", "dashboard.owner", "leave.approve"},
-    "school_admin": _ALL_STAFF | {"academic.manage", "people.manage", "staff.manage", "dashboard.owner"},
+                               "audit.view", "dashboard.owner", "leave.approve", "notices.manage"},
+    "school_admin": _ALL_STAFF | {"academic.manage", "people.manage", "staff.manage", "dashboard.owner", "notices.manage"},
     "accountant": _ALL_STAFF | {"dashboard.owner"},
     "admission_coordinator": _ALL_STAFF | {"people.manage", "dashboard.owner"},
     "transport_coordinator": _ALL_STAFF | {"dashboard.owner"},
@@ -324,4 +324,7 @@ async def ensure_indexes():
                                           unique=True, name="uniq_room_period",
                                           partialFilterExpression={"room_key": {"$type": "string"}})
     await db.download_grants.create_index("token_hash", unique=True)
+    await db.notices.create_index([("school_id", 1), ("status", 1), ("published_at", -1)])
+    await db.notices.create_index([("school_id", 1), ("status", 1), ("publish_at", 1)])
+    await db.notice_receipts.create_index([("notice_id", 1), ("user_id", 1)], unique=True)
     await db.download_grants.create_index("expires_at", expireAfterSeconds=0)

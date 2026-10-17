@@ -1,0 +1,32 @@
+{
+  "summary": "Milestone 3 Module 1 (School Notices & Announcements) tested end-to-end on backend + frontend (web preview, 390x844). Backend pytest: tests/test_m3_notices.py = 2/2 passed; full suite = 104 passed, 1 skipped (the one skipped is the pre-existing restart-persistence test, unrelated to M3). Frontend principal flow verified: Command Centre -> quick-notices -> /notices (filter chips notice-filter-all/published/scheduled/review/draft present) -> new-notice-button opens sheet (notice-title-input, notice-body-input, notice-cat-event, notice-priority-important, notice-publish) -> notice created with HTML-stripped title/body (body posted with <script> was rendered as plain 'xss'). notice-card-<id> opens /notices/<id> with notice-stats, notice-read-count, notice-ack-count visible; editing published notice via notice-action-edit requires reason (notice-edit-body + notice-edit-reason + notice-edit-save) — persisted with revision_count=1 ('Edited 1 time(s)' line shown). Parent flow (parent@sunrise.demo): Family home shows 'School notices' row with '1 new · 1 need acknowledgement' (open-parent-notices testID). Opening /parent-notices auto-marks read; Acknowledge button (notice-ack-<id>) tapped -> toast 'Acknowledged. Thank you.' + badge becomes notice-acked-<id> 'Acknowledged'. Returning to principal /notices/<id> now shows read=1 (50%), acknowledged=1 (50%). After full ack, parent home card updates to 'School notices · You're up to date'. M2 regression: principal quick-homework/quick-exams/quick-timetable/quick-notices + parent open-parent-notices/child-homework-all/child-exams-row all present and tappable. No deprecated expo packages (expo-av/expo-barcode-scanner/expo-background-fetch) found in reviewed files; no React Native component/text-wrapping issues; no red screen errors.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/pytest/m3_notices_iter14.xml",
+    "/app/test_reports/pytest/full_suite_iter14.xml",
+    "/app/backend/tests/test_m3_notices.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_notices.sanitize() strips all tags via regex and html-unescapes first, then removes NULs — adequate for the plain-text contract. Verified: posting '<b>Sports day</b>' + '<script>alert(1)</script>shoes' resulted in zero '<' chars in stored title/body.",
+    "_promote() uses MongoDB aggregation pipeline update to atomically set status='published' and published_at=$publish_at — avoids multi-round-trip races.",
+    "audience_parent_users() correctly joins sections -> active students -> verified guardian_links -> guardian.user_id -> active parent memberships, giving a tenant-safe denominator for stats.",
+    "parent_can_see_notice() returns 404 (not 403) for notices outside the parent's class/section scope — matches the stricter privacy requirement (parents must not learn that a hidden notice exists).",
+    "mark_read uses $setOnInsert so re-opening the list never clobbers an earlier ack_at, and acknowledge() uses a conditional {ack_at: None} update + modified_count check so the audit log emits exactly one notice.acknowledge event even on repeated calls (verified in test).",
+    "Edit on published notice rejects empty reason (400) and pushes previous title/body/priority onto revisions[] — history is kept server-side and the detail view exposes revision_count to staff.",
+    "Frontend notices/[id].tsx: edit sheet correctly shows notice-edit-reason only when status==='published'; parent-notices.tsx uses useFocusEffect to batch-mark-read without blocking acknowledgement (read != ack).",
+    "No file exceeds 700 lines (routes_notices.py=306, notices/index.tsx=103, notices/[id].tsx=71, parent-notices.tsx=53)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "One NTEST notice ('NTEST UI <timestamp>', priority=important, category=event, audience=whole school) was created via the Principal UI and used to drive the parent ack flow. The pytest fixture _cleanup() in test_m3_notices.py already deletes NTEST* notices + receipts; the UI-created notice was additionally cleaned up post-run via a direct Mongo delete_many on title regex '^NTEST'.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend public URL comes from EXPO_PUBLIC_BACKEND_URL (frontend/.env). Login testIDs: login-email-input, login-password-input, login-submit-button. Principal path: quick-notices -> /notices -> notice-card-<id>. Parent path: open-parent-notices (family home card) -> /parent-notices -> notice-ack-<id> / notice-acked-<id>. Important notices default to requires_ack=true (routes_notices.create). Visiting /parent-notices auto-fires POST /parent/notices/<id>/read for every unread item in the first render — testers should expect read=audience_size on the stats panel after one parent visit. quick-attendance tile is NOT exposed on the Principal command centre (homework/exams/timetable/notices only); do not assert its presence as part of M2 regression."
+}

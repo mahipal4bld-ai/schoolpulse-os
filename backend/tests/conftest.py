@@ -19,7 +19,7 @@ def _serialize_shared_academic_state(request):
     """M2/audit suites mutate the same demo section (attendance, homework, exams, timetable). Under xdist they would
     race across workers, so they take a cross-process lock; other suites keep running in parallel."""
     name = request.module.__name__.rsplit(".", 1)[-1]
-    if not name.startswith(("test_m2_", "test_audit_")):
+    if not name.startswith(("test_m2_", "test_m3_", "test_audit_")):
         yield
         return
     import fcntl
