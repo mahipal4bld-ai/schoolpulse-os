@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, model_validator
 from starlette.concurrency import run_in_threadpool
 
 import storage
-from core import PERMISSIONS, Ctx, audit, db, need, now_utc, oid, optional_user, out, school_ctx
+from core import Ctx, audit, db, need, now_utc, oid, out, school_ctx
 from routes_attendance import _section_access
 from routes_directory import _parent_links
 from routes_homework import _can_assign
@@ -370,29 +370,22 @@ def _render_pdf(school: dict, logo: Optional[bytes], exam: dict, row: dict, stud
     return buf.getvalue()
 
 
-@router.get("/exams/{eid}/report-card/{student_id}.pdf")
-async def report_card(eid: str, student_id: str, school: str = Query(..., alias="school"),
-                      user: Optional[dict] = Depends(optional_user)):
-    """Browser-downloadable PDF (token via Authorization header or ?token=). Staff with section access, or a verified
-    guardian once results are published."""
-    if not user:
-        raise HTTPException(401, "Not authenticated")
-    m = await db.memberships.find_one({"user_id": str(user["_id"]), "school_id": school, "status": "active"})
-    if not m:
-        raise HTTPException(403, "You do not have access to this school")
-    ctx = Ctx(user=user, user_id=str(user["_id"]), school_id=school, role=m["role"], perms=PERMISSIONS.get(m["role"], set()))
+async def render_report_card(ctx: Ctx, eid: str, student_id: str) -> tuple[bytes, str]:
+    """Authorise + render. Staff with section access, or a verified guardian once results are published."""
     e = await _exam(ctx, eid)
-    st = await db.students.find_one({"_id": oid(student_id), "school_id": school})
+    st = await db.students.find_one({"_id": oid(student_id), "school_id": ctx.school_id})
     if not st or st["section_id"] not in e["section_ids"]:
         raise HTTPException(404, "Student is not part of this exam")
     if "parent.portal" in ctx.perms:
         if e["status"] != "published" or student_id not in {lk["student_id"] for lk in await _parent_links(ctx)}:
             raise HTTPException(403, "Report card is not available")
+    elif not ({"academic.manage", "teacher.workspace"} & ctx.perms):
+        raise HTTPException(403, "Report card is not available")
     else:
         await _section_access(ctx, st["section_id"])
     res = await compute_results(e, st["section_id"])
     row = next(r for r in res["rows"] if r["student_id"] == student_id)
-    sch = await db.schools.find_one({"_id": oid(school)})
+    sch = await db.schools.find_one({"_id": oid(ctx.school_id)})
     logo = None
     fid = sch.get("brand", {}).get("logo_file_id")
     if fid:
@@ -404,7 +397,25 @@ async def report_card(eid: str, student_id: str, school: str = Query(..., alias=
                 logo = None
     sec = await db.sections.find_one({"_id": oid(st["section_id"])})
     pdf = await run_in_threadpool(_render_pdf, sch, logo, e, row, st, f"{sec['class_name']} - {sec['name']}", res["students"])
-    await audit(ctx.user_id, "exam.report_card", "exam", eid, school, {"student_id": student_id})
+    await audit(ctx.user_id, "exam.report_card", "exam", eid, ctx.school_id, {"student_id": student_id})
+    return pdf, f"report-card-{row['admission_no']}.pdf"
+
+
+def pdf_response(pdf: bytes, filename: str) -> Response:
     return Response(content=pdf, media_type="application/pdf", headers={
-        "Content-Disposition": f'inline; filename="report-card-{row["admission_no"]}.pdf"',
-        "Cache-Control": "private, no-store, max-age=0", "X-Content-Type-Options": "nosniff"})
+        "Content-Disposition": f'attachment; filename="{filename}"', "Cache-Control": "private, no-store, max-age=0",
+        "Pragma": "no-cache", "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer"})
+
+
+@router.get("/exams/{eid}/report-card/{student_id}.pdf")
+async def report_card(eid: str, student_id: str, ctx: Ctx = Depends(school_ctx)):
+    """Header-authenticated download (Authorization + X-School-Id). Tokens are never accepted in the URL."""
+    return pdf_response(*await render_report_card(ctx, eid, student_id))
+
+
+@router.post("/exams/{eid}/report-card/{student_id}/download-grant")
+async def report_card_grant(eid: str, student_id: str, ctx: Ctx = Depends(school_ctx)):
+    """For native in-app browsers: authorise now, return a single-use 60 s URL (no access token in it)."""
+    from file_access import issue_grant
+    await render_report_card(ctx, eid, student_id)  # fail fast with the same rules
+    return await issue_grant(ctx.user_id, ctx.school_id, "report_card", {"exam_id": eid, "student_id": student_id})

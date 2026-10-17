@@ -1,0 +1,29 @@
+{
+  "summary": "Audit remediation (FIX 1 tokenless downloads, FIX 2 document-level file permissions, FIX 3 timetable atomic clash detection) verified end-to-end. Backend: full pytest suite = 102 passed, 1 skipped; the skipped restart test run separately = 1 passed. The 6 audit tests (test_audit_file_access.py + test_audit_timetable_atomic.py) all pass — covering role/document matrix, revocations taking immediate effect, single-use short-lived tokenless grants, concurrent teacher/room double-booking, and the two unique partial indexes. Frontend (web, 390x844): parent@sunrise.demo tapped an AUDIT-TEST homework attachment via Family -> Homework & diary -> View all -> parent-hw-file-<fid>; network capture confirms a single GET /api/files/<fid> with Authorization: Bearer header, 200 OK, and ZERO requests containing 'token=' in any URL (web uses blob: via apiBlob). Report card flow via child-exams-row -> parent-report-card-<examId> likewise produced GET /api/exams/<eid>/report-card/<sid>.pdf with Authorization header, 200 OK, no token in URL. No deprecated expo packages found in touched files. No React Native issues detected.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/pytest/audit_iter13.xml",
+    "/app/test_reports/pytest/full_suite_iter13_all.xml",
+    "/app/backend/tests/test_audit_file_access.py",
+    "/app/backend/tests/test_audit_timetable_atomic.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "openSecureDownload (frontend/src/utils/download.ts) correctly branches: web uses apiBlob (header-authenticated fetch + blob: URL click) and native uses POST download-grant then opens the /api/downloads/<token> URL — the user access token never appears in any URL on either path.",
+    "file_access.can_read_file enforces deny-by-default and runs live checks against memberships/teacher_assignments/guardian_links/published-homework on every call, so revocation is immediate (verified by test_revocations_take_effect_immediately).",
+    "consume_grant uses find_one_and_update with {used:false, expires_at:$gt:now} and only persists the SHA-256 hash of the token — single-use + short-lived + storage-safe.",
+    "GET /api/files/{id} now rejects ?token=<access_token> with 401 (verified in test_download_grants_are_single_use_short_lived_and_tokenless)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "Transient AUDIT-TEST homework (with PDF attachment) + AUDIT-TEST EX exam were created via admin API in parent's child section, exercised, then deleted during cleanup. A pre-run sweep also removes stale AUDIT-TEST* rows.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "testIDs on login page are login-email-input / login-password-input / login-submit-button (NOT login-email). Parent nav path: child-homework-all -> parent-hw-file-<fileId>; child-exams-row -> parent-report-card-<examId>. Staff path on exam results list: report-card-<studentId>. API URL for the preview is EXPO_PUBLIC_BACKEND_URL (not EXPO_BACKEND_URL). To build an exam programmatically, grab subject_id from GET /timetable/sections/<sectionId> (admin) rather than /academic/subjects.items[0] (needs valid section-teacher assignment via _can_assign). Parent children endpoint is /api/parent/children (returns {items:[]}), not /parent/overview (404)."
+}

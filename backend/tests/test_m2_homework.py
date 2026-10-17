@@ -15,10 +15,17 @@ def _d(n=0):
 
 
 def _teacher_slot(th):
-    """A (section, subject) the demo teacher teaches, plus the dashboard."""
+    """A (section, subject) the demo teacher teaches where parent@sunrise.demo has a verified child (deterministic)."""
+    from bson import ObjectId
     u = db.users.find_one({"email": "teacher@sunrise.demo"})
     t = db.teachers.find_one({"user_id": str(u["_id"])})
-    a = db.teacher_assignments.find_one({"teacher_id": str(t["_id"]), "subject_id": {"$ne": None}})
+    pu = db.users.find_one({"email": "parent@sunrise.demo"})
+    gids = [str(g["_id"]) for g in db.guardians.find({"user_id": str(pu["_id"])})]
+    kids = [lk["student_id"] for lk in db.guardian_links.find({"guardian_id": {"$in": gids}, "verified": True})]
+    secs = {s["section_id"] for s in db.students.find({"_id": {"$in": [ObjectId(k) for k in kids]}})}
+    asg = sorted(db.teacher_assignments.find({"teacher_id": str(t["_id"]), "subject_id": {"$ne": None}}),
+                 key=lambda a: (a["section_id"] not in secs, str(a["section_id"]), str(a["subject_id"])))
+    a = asg[0]
     return a["section_id"], a["subject_id"], str(t["_id"])
 
 

@@ -1,11 +1,11 @@
-import * as WebBrowser from "expo-web-browser";
 import { FilePdf } from "phosphor-react-native";
-import React from "react";
+import React, { useState } from "react";
 import { View } from "react-native";
 
-import { reportCardUrl } from "@/src/api";
+import { useToast } from "@/src/components/toast";
 import { Button, Txt } from "@/src/components/ui";
 import { spacing, useTheme } from "@/src/theme";
+import { openSecureDownload } from "@/src/utils/download";
 
 export type ExamT = {
   id: string;
@@ -39,5 +39,14 @@ export function SubjectLines({ lines }: { lines: SubjectLine[] }) {
 
 export function ReportCardButton({ examId, studentId, testID }: { examId: string; studentId: string; testID: string }) {
   const { colors } = useTheme();
-  return <Button small variant="outline" testID={testID} title="Report card (PDF)" icon={<FilePdf size={16} color={colors.onSurface} />} onPress={() => WebBrowser.openBrowserAsync(reportCardUrl(examId, studentId)).catch(() => {})} />;
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const base = `/exams/${examId}/report-card/${studentId}`;
+  const open = () => {
+    setBusy(true);
+    openSecureDownload({ headerPath: `${base}.pdf`, grantPath: `${base}/download-grant`, filename: "report-card.pdf" })
+      .catch((e: Error) => toast.show(e.message, "error"))
+      .finally(() => setBusy(false));
+  };
+  return <Button small variant="outline" testID={testID} title="Report card (PDF)" loading={busy} icon={<FilePdf size={16} color={colors.onSurface} />} onPress={open} />;
 }

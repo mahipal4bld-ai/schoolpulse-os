@@ -247,7 +247,7 @@ def test_private_variants_not_served_publicly(doc_patch):
     d.update(doc_patch)
     fid = str(db.files.insert_one(d).inserted_id)
     try:
-        assert requests.get(f"{API}/files/{fid}").status_code == 403
+        assert requests.get(f"{API}/files/{fid}").status_code == 401  # anonymous: not authenticated
         assert requests.get(f"{API}/public/schools/sunrise-valley/brand").text.find(fid) == -1
     finally:
         db.files.delete_one({"_id": ObjectId(fid)})

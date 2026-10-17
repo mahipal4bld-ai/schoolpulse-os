@@ -195,7 +195,7 @@ async def current_user(request: Request) -> dict:
 
 
 async def optional_user(request: Request) -> Optional[dict]:
-    token = _bearer(request) or request.query_params.get("token")
+    token = _bearer(request)  # header only: tokens in URLs leak via logs, history and Referer
     if not token:
         return None
     try:
@@ -311,4 +311,17 @@ async def ensure_indexes():
     await db.exams.create_index([("school_id", 1), ("status", 1), ("start_date", -1)])
     await db.exam_marks.create_index([("exam_id", 1), ("section_id", 1), ("subject_id", 1)], unique=True)
     await db.timetable_slots.create_index([("school_id", 1), ("section_id", 1), ("day", 1), ("period", 1)], unique=True)
-    await db.timetable_slots.create_index([("school_id", 1), ("teacher_id", 1), ("day", 1), ("period", 1)])
+    # Atomic clash prevention: the database rejects a second booking of the same teacher/room in a period.
+    info = await db.timetable_slots.index_information()
+    if "school_id_1_teacher_id_1_day_1_period_1" in info:
+        await db.timetable_slots.drop_index("school_id_1_teacher_id_1_day_1_period_1")
+    await db.timetable_slots.update_many({"room_key": {"$exists": False}, "room": {"$nin": ["", None]}},
+                                         [{"$set": {"room_key": {"$toLower": {"$trim": {"input": "$room"}}}}}])
+    await db.timetable_slots.create_index([("school_id", 1), ("teacher_id", 1), ("day", 1), ("period", 1)],
+                                          unique=True, name="uniq_teacher_period",
+                                          partialFilterExpression={"teacher_id": {"$type": "string"}})
+    await db.timetable_slots.create_index([("school_id", 1), ("room_key", 1), ("day", 1), ("period", 1)],
+                                          unique=True, name="uniq_room_period",
+                                          partialFilterExpression={"room_key": {"$type": "string"}})
+    await db.download_grants.create_index("token_hash", unique=True)
+    await db.download_grants.create_index("expires_at", expireAfterSeconds=0)

@@ -1,0 +1,164 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secret-scan:
+    name: Secret scanning (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Refuse committed .env files
+        run: |
+          if git ls-files | grep -E '(^|/)\.env$'; then echo "::error::.env files must never be committed"; exit 1; fi
+
+  backend:
+    name: Backend tests (disposable MongoDB)
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7
+        ports: ["27017:27017"]
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1})'"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      # Fictional demo seed only. No production data, no live credentials.
+      MONGO_URL: mongodb://localhost:27017
+      DB_NAME: schoolpulse_ci_${{ github.run_id }}
+      APP_ENV: ci
+      DEMO_MODE: "true"
+      STORAGE_BACKEND: memory
+      EMERGENT_LLM_KEY: ci-disabled
+      CORS_ORIGINS: "*"
+      APP_NAME: schoolpulse-ci
+      BACKEND_LOG_FILES: /tmp/backend.log
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/
+      - name: Write throwaway .env (random JWT secret per run)
+        run: |
+          {
+            echo "MONGO_URL=$MONGO_URL"; echo "DB_NAME=$DB_NAME"; echo "APP_ENV=$APP_ENV"; echo "DEMO_MODE=$DEMO_MODE"
+            echo "STORAGE_BACKEND=$STORAGE_BACKEND"; echo "EMERGENT_LLM_KEY=$EMERGENT_LLM_KEY"; echo "CORS_ORIGINS=$CORS_ORIGINS"
+            echo "APP_NAME=$APP_NAME"; echo "JWT_SECRET=$(openssl rand -hex 48)"; echo "TRUSTED_PROXY_CIDRS=127.0.0.1/32"
+          } > .env
+      - name: Start API
+        run: |
+          nohup python -m uvicorn server:app --host 0.0.0.0 --port 8001 > /tmp/backend.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:8001/api/health && exit 0; sleep 1; done
+          cat /tmp/backend.log; exit 1
+      - name: Critical authorization & security tests
+        run: python -m pytest tests/test_audit_file_access.py tests/test_audit_timetable_atomic.py tests/test_review_fixes.py tests/test_milestone1_audit.py tests/test_m11_hardening.py -q
+      - name: Full backend suite
+        run: python -m pytest tests -q --junitxml=/tmp/pytest.xml
+      - name: Restart-persistence test (isolated, serial)
+        run: |
+          # CI has no supervisor; restart the API process ourselves, then assert the limiter survived.
+          python - <<'PY'
+          import os, subprocess, time, uuid, requests
+          API = "http://localhost:8001/api"
+          email, ip = f"restart-{uuid.uuid4().hex[:6]}@example.com", "203.0.113.200"
+          for _ in range(6):
+              requests.post(f"{API}/auth/login", json={"email": email, "password": "x"}, headers={"X-Forwarded-For": ip})
+          subprocess.run("pkill -f 'uvicorn server:app'", shell=True)
+          time.sleep(2)
+          subprocess.Popen("nohup python -m uvicorn server:app --host 0.0.0.0 --port 8001 >> /tmp/backend.log 2>&1 &", shell=True)
+          for _ in range(60):
+              try:
+                  if requests.get(f"{API}/health", timeout=1).ok: break
+              except requests.RequestException: time.sleep(1)
+          r = requests.post(f"{API}/auth/login", json={"email": email, "password": "x"}, headers={"X-Forwarded-For": ip})
+          assert r.status_code == 429, r.status_code
+          print("restart persistence OK")
+          PY
+      - name: Test summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import xml.etree.ElementTree as ET, os
+          if os.path.exists("/tmp/pytest.xml"):
+              r = ET.parse("/tmp/pytest.xml").getroot(); s = r if r.tag == "testsuite" else r[0]
+              t, f, e, k = (int(s.get(x)) for x in ("tests", "failures", "errors", "skipped"))
+              print(f"tests={t} passed={t-f-e-k} failed={f} errors={e} skipped={k}")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-test-results
+          path: |
+            /tmp/pytest.xml
+            /tmp/backend.log
+
+  frontend:
+    name: Frontend unit tests + TypeScript
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      EXPO_PUBLIC_BACKEND_URL: https://ci.invalid
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+      - run: corepack enable
+      - name: Install (lockfile, no lifecycle scripts)
+        run: yarn install --frozen-lockfile --ignore-scripts
+      - name: TypeScript
+        run: npx tsc --noEmit -p .
+      - name: Jest
+        run: npx jest --ci
+      - name: Hindi catalogue coverage
+        run: node scripts/i18n-check.js
+
+  dependencies:
+    name: Dependency checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Python (pip-audit)
+        run: |
+          pip install pip-audit
+          grep -v '^emergentintegrations' backend/requirements.txt > /tmp/req.txt
+          pip-audit -r /tmp/req.txt --strict --desc on || echo "::warning::pip-audit reported vulnerabilities (see log)"
+      - name: JavaScript (yarn audit, fail on critical)
+        working-directory: frontend
+        run: |
+          corepack enable
+          yarn audit --groups dependencies --level critical; code=$?
+          # yarn audit exit code is a bitmask; 16 = critical
+          if [ $((code & 16)) -ne 0 ]; then exit 1; fi

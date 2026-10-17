@@ -73,10 +73,11 @@ def test_private_asset_requires_membership():
     priv["visibility"] = "private"
     pid = str(db.files.insert_one(priv).inserted_id)
     try:
-        assert requests.get(f"{API}/files/{pid}").status_code == 403
+        assert requests.get(f"{API}/files/{pid}").status_code == 401
         _, _, stok = ctx("owner@sunrise.demo", "sunrise-valley")
         assert requests.get(f"{API}/files/{pid}", headers={"Authorization": f"Bearer {stok}"}).status_code == 403
-        assert requests.get(f"{API}/files/{pid}?token=garbage").status_code == 403
+        assert requests.get(f"{API}/files/{pid}?token=garbage").status_code == 401  # URL tokens never accepted
+        assert requests.get(f"{API}/files/{pid}?token={gtok}").status_code == 401
         assert requests.get(f"{API}/files/{pid}", headers={"Authorization": f"Bearer {gtok}"}).status_code == 200
     finally:
         db.files.delete_one({"_id": ObjectId(pid)})

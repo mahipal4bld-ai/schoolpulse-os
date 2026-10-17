@@ -43,7 +43,7 @@ def test_private_file_headers_and_scope():
         assert requests.get(f"{API}/files/{fid}", headers={"Authorization": other["Authorization"]}).status_code == 403
         parent, _ = _login("parent@greenfield.demo")
         assert requests.get(f"{API}/files/{fid}", headers={"Authorization": parent["Authorization"]}).status_code == 403
-        assert requests.get(f"{API}/files/{fid}").status_code == 403
+        assert requests.get(f"{API}/files/{fid}").status_code == 401
     finally:
         db.files.delete_one({"_id": ObjectId(fid)})
 

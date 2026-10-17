@@ -17,7 +17,7 @@ def test_intelligence_is_derived_from_records():
     sec, sub, _ = _teacher_slot(th)
     day = datetime.now(IST).date().isoformat()
     db.attendance.delete_many({"section_id": sec, "date": day})
-    db.homework.delete_many({"title": {"$regex": "^TEST "}})
+    db.homework.delete_many({"title": {"$regex": "^INTELTEST"}})
     before = requests.get(f"{API}/dashboard/academic", headers=owner)
     assert before.status_code == 200
     b = before.json()
@@ -26,7 +26,7 @@ def test_intelligence_is_derived_from_records():
     admin = login("admin@sunrise.demo")
     sheet = requests.get(f"{API}/attendance/sections/{sec}", headers=admin).json()
     requests.put(f"{API}/attendance/sections/{sec}", headers=admin, json={"records": [{"student_id": s["id"], "status": "absent"} for s in sheet["students"]]})
-    requests.post(f"{API}/homework", headers=th, json={"section_id": sec, "subject_id": sub, "title": "TEST intel", "due_date": day, "publish": True})
+    requests.post(f"{API}/homework", headers=th, json={"section_id": sec, "subject_id": sub, "title": "INTELTEST hw", "due_date": day, "publish": True})
     a = requests.get(f"{API}/dashboard/academic", headers=owner).json()
     # recompute today's rate straight from the DB
     p = n = 0
@@ -42,7 +42,7 @@ def test_intelligence_is_derived_from_records():
     assert any(x["section_id"] == sec for x in a["attendance"]["lowest_sections"])
     assert requests.get(f"{API}/dashboard/academic?days=200", headers=owner).json()["window_days"] == 60
     db.attendance.delete_many({"section_id": sec, "date": day})
-    db.homework.delete_many({"title": {"$regex": "^TEST "}})
+    db.homework.delete_many({"title": {"$regex": "^INTELTEST"}})
     # permissions + tenancy
     assert requests.get(f"{API}/dashboard/academic", headers=th).status_code == 403
     assert requests.get(f"{API}/dashboard/academic", headers=login("parent@sunrise.demo")).status_code == 403

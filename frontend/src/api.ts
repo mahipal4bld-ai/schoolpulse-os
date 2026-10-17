@@ -109,14 +109,31 @@ export function fileUrl(id?: string | null) {
   return id ? `${API_BASE}/files/${id}` : null;
 }
 
-/** Private file link (homework attachments etc.) carrying the short-lived access token. */
-export function privateFileUrl(id: string) {
-  return `${API_BASE}/files/${id}${token ? `?token=${encodeURIComponent(token)}` : ""}`;
+/** Header-authenticated binary fetch (private files, PDFs). Tokens never go into URLs. */
+export async function apiBlob(path: string, _retried = false): Promise<Blob> {
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (schoolId) headers["X-School-Id"] = schoolId;
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, { headers, referrerPolicy: "no-referrer" } as RequestInit);
+  } catch {
+    throw new ApiError(0, "You appear to be offline. Check your connection and try again.");
+  }
+  if (res.status === 401 && token && !_retried && (await refreshSession())) return apiBlob(path, true);
+  if (!res.ok) {
+    let msg = "Download failed";
+    try {
+      msg = detailToMessage((await res.json())?.detail);
+    } catch {}
+    throw new ApiError(res.status, msg);
+  }
+  return res.blob();
 }
 
-/** Branded PDF report card (opened in the system browser). */
-export function reportCardUrl(examId: string, studentId: string) {
-  return `${API_BASE}/exams/${examId}/report-card/${studentId}.pdf?school=${schoolId ?? ""}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
+/** Turns a server-issued one-time grant path ("/api/downloads/…") into an absolute URL. */
+export function grantUrl(path: string) {
+  return `${API_BASE.replace(/\/api$/, "")}${path}`;
 }
 
 export async function uploadImage(uri: string, purpose: "logo" | "banner" | "photo", mime = "image/jpeg") {

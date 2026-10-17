@@ -63,8 +63,9 @@ def test_full_exam_flow_marks_publish_parent_report_card():
     # parent cannot see before publish
     ph, kid = _parent_for_section(sec)
     assert all(e["id"] != eid for e in requests.get(f"{API}/parent/children/{kid}/exams", headers=ph).json()["items"])
-    pdf_url = f"{API}/exams/{eid}/report-card/{kid}.pdf?school={_school(ph)}"
-    assert requests.get(pdf_url, headers={"Authorization": ph["Authorization"]}).status_code == 403
+    pdf_url = f"{API}/exams/{eid}/report-card/{kid}.pdf"
+    assert requests.get(pdf_url, headers=ph).status_code == 403
+    assert requests.post(f"{API}/exams/{eid}/report-card/{kid}/download-grant", headers=ph).status_code == 403
     # teacher cannot publish; admin publishes; marks lock
     assert requests.post(f"{API}/exams/{eid}/status?status=published", headers=th).status_code == 403
     pub = requests.post(f"{API}/exams/{eid}/status?status=published", headers=admin)
@@ -72,11 +73,16 @@ def test_full_exam_flow_marks_publish_parent_report_card():
     assert requests.put(base, headers=th, json={"records": recs}).status_code == 400
     pe = next(e for e in requests.get(f"{API}/parent/children/{kid}/exams", headers=ph).json()["items"] if e["id"] == eid)
     assert pe["percentage"] is not None and pe["subjects"][0]["subject"]
-    pdf = requests.get(pdf_url, headers={"Authorization": ph["Authorization"]})
+    pdf = requests.get(pdf_url, headers=ph)
     assert pdf.status_code == 200 and pdf.content[:4] == b"%PDF" and "no-store" in pdf.headers["Cache-Control"]
     token = ph["Authorization"].split()[1]
-    assert requests.get(f"{pdf_url}&token={token}").status_code == 200  # browser download path
+    assert requests.get(f"{pdf_url}?school={_school(ph)}&token={token}").status_code == 401  # URL tokens rejected
     assert requests.get(pdf_url).status_code == 401
+    g = requests.post(f"{API}/exams/{eid}/report-card/{kid}/download-grant", headers=ph).json()
+    assert token not in g["url"] and g["expires_in"] <= 60
+    first = requests.get(f"{API.rsplit('/api', 1)[0]}{g['url']}")
+    assert first.status_code == 200 and first.content[:4] == b"%PDF" and first.headers["Referrer-Policy"] == "no-referrer"
+    assert requests.get(f"{API.rsplit('/api', 1)[0]}{g['url']}").status_code == 404  # single use
     owner = login("owner@sunrise.demo")
     s = requests.get(f"{API}/exams/summary/recent", headers=owner).json()
     assert any(x["id"] == eid and x["average"] is not None for x in s["items"])

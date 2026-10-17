@@ -25,9 +25,23 @@ from routes_exams import router as exams_router
 from routes_workspace import router as workspace_router
 from routes_parent import router as parent_router
 from routes_insights import router as insights_router
+from routes_downloads import router as downloads_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("schoolpulse")
+
+
+class _RedactDownloadTokens(logging.Filter):
+    """One-time download grants live in the URL path; never write them to access logs."""
+    _re = __import__("re").compile(r"(/api/downloads/)[A-Za-z0-9_\-]+")
+
+    def filter(self, record):
+        if isinstance(record.args, tuple):
+            record.args = tuple(self._re.sub(r"\1[redacted]", a) if isinstance(a, str) else a for a in record.args)
+        return True
+
+
+logging.getLogger("uvicorn.access").addFilter(_RedactDownloadTokens())
 
 app = FastAPI(title="SchoolPulse OS API", version="1.0.0")
 api = APIRouter(prefix="/api")
@@ -79,6 +93,7 @@ api.include_router(exams_router)
 api.include_router(workspace_router)
 api.include_router(parent_router)
 api.include_router(insights_router)
+api.include_router(downloads_router)
 app.include_router(api)
 
 

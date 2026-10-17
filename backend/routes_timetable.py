@@ -4,6 +4,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field, field_validator
+from pymongo.errors import DuplicateKeyError
 
 from core import Ctx, audit, db, need, now_utc, oid, school_ctx
 from routes_attendance import _section_access, today_ist
@@ -136,14 +137,24 @@ async def set_slot(section_id: str, body: SlotIn, ctx: Ctx = Depends(need("acade
                                      f"{secs.get(clash['section_id'], 'another section')} in period {body.period} on "
                                      f"{DAY_NAMES[body.day]}")
     if body.room:
-        room_clash = await db.timetable_slots.find_one({"school_id": ctx.school_id, "room": body.room, "day": body.day,
+        room_clash = await db.timetable_slots.find_one({"school_id": ctx.school_id, "room_key": body.room.strip().lower(), "day": body.day,
                                                         "period": body.period, "section_id": {"$ne": section_id}})
         if room_clash:
             raise HTTPException(409, f"Conflict: room {body.room} is already in use in period {body.period} on {DAY_NAMES[body.day]}")
     key = {"school_id": ctx.school_id, "section_id": section_id, "day": body.day, "period": body.period}
-    await db.timetable_slots.update_one(key, {"$set": {"subject_id": body.subject_id, "teacher_id": body.teacher_id,
-                                                       "room": body.room.strip(), "updated_at": now_utc(),
-                                                       "updated_by": ctx.user_id}}, upsert=True)
+    room = body.room.strip()
+    upd = {"$set": {"subject_id": body.subject_id, "teacher_id": body.teacher_id, "room": room,
+                    "updated_at": now_utc(), "updated_by": ctx.user_id}}
+    if room:
+        upd["$set"]["room_key"] = room.lower()
+    else:
+        upd["$unset"] = {"room_key": ""}
+    try:  # the unique partial indexes (core.ensure_indexes) make clash prevention atomic under concurrency
+        await db.timetable_slots.update_one(key, upd, upsert=True)
+    except DuplicateKeyError as e:
+        what = "room" if "uniq_room_period" in str(e) else "teacher" if "uniq_teacher_period" in str(e) else "slot"
+        raise HTTPException(409, f"Conflict: this {what} was just booked for period {body.period} on "
+                                 f"{DAY_NAMES[body.day]} by another update. Refresh and try again.")
     await audit(ctx.user_id, "timetable.set", "timetable", f"{section_id}:{body.day}:{body.period}", ctx.school_id)
     return await section_timetable(section_id, ctx)
 

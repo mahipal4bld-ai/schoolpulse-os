@@ -60,7 +60,7 @@ def test_full_academic_day():
         assert any(x["topic"] == "E2E Lesson" for x in ov["diary_today"])
         assert ov["latest_result"]["name"] == "E2E Exam" and ov["latest_result"]["percentage"] == 75.0 and ov["latest_result"]["rank"] == 1
         assert requests.get(f"{API}/files/{fid}", headers={"Authorization": ph["Authorization"]}).status_code == 200
-        pdf = requests.get(f"{API}/exams/{ex['id']}/report-card/{kid}.pdf?school={ph['X-School-Id']}", headers={"Authorization": ph["Authorization"]})
+        pdf = requests.get(f"{API}/exams/{ex['id']}/report-card/{kid}.pdf", headers=ph)
         assert pdf.status_code == 200 and pdf.content[:4] == b"%PDF"
         # 5. owner intelligence + staff summary reflect the day
         intel = requests.get(f"{API}/dashboard/academic", headers=owner).json()

@@ -19,12 +19,15 @@ def _cleanup():
 
 
 def _parent_for_section(sec):
-    stu_ids = [str(s["_id"]) for s in db.students.find({"section_id": sec, "status": "active"})]
-    link = db.guardian_links.find_one({"student_id": {"$in": stu_ids}, "verified": True})
+    """A seeded parent account (not temp ACL users) with a verified child in the section."""
     from bson import ObjectId
-    g = db.guardians.find_one({"_id": ObjectId(link["guardian_id"])})
-    u = db.users.find_one({"_id": ObjectId(g["user_id"])})
-    return login(u["email"]), link["student_id"]
+    stu_ids = [str(s["_id"]) for s in db.students.find({"section_id": sec, "status": "active"})]
+    for link in db.guardian_links.find({"student_id": {"$in": stu_ids}, "verified": True}).sort("_id", 1):
+        g = db.guardians.find_one({"_id": ObjectId(link["guardian_id"]), "user_id": {"$ne": None}})
+        u = g and db.users.find_one({"_id": ObjectId(g["user_id"]), "email": {"$regex": "\\.demo$"}})
+        if u:
+            return login(u["email"]), link["student_id"]
+    raise AssertionError("no demo parent account for this section")
 
 
 def test_teacher_writes_lesson_and_note_parent_reads():
