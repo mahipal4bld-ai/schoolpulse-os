@@ -1,0 +1,39 @@
+{
+  "summary": "Milestone 3 Module 3 (School events & calendar) + leader read-only messaging change tested end-to-end. Backend: pytest tests/test_m3_events.py = 4/4 passed; full backend suite = 110 passed, 1 skipped (pre-existing restart_persistence skip, unrelated). Added tests/test_m3_events_edges.py with 4 additional probes (upcoming excludes cancelled + limit bounds 422; draft cancel without reason OK; patch cancelled -> 400; republish cancelled -> 409; calendar range start>end -> 400; range 93d -> 400; bad act -> 422; non-existent id -> 404; teacher/parent cannot POST/PATCH/cancel -> 403) — 4/4 passed. Frontend web preview (390x844): Principal (principal@sunrise.demo) via quick-calendar landed on /calendar showing cal-month-label 'October 2026', month-grid cal-prev/cal-next/cal-day-* working, two demo events in current month (Annual Sports Day 23 Oct 08:30-13:00 Main ground, Parent-Teacher Meeting 29 Oct 10:00-13:00 Classrooms). new-event-button opened event-sheet with event-title-input, event-start-input, event-start-time-input, event-end-time-input, event-location-input, event-publish, event-save-draft all present. Saved an ETEST draft, re-opened via cal-item-* -> event-detail-sheet showed event-detail-publish + event-cancel; published it; re-opened the now-published event -> event-cancel-reason input appeared, cancelled with reason 'UI test cancel' -> item re-rendered with 'Cancelled' badge and strikethrough title. Parent (parent@sunrise.demo): open-parent-calendar on family home (subtitle 'Next: Annual Sports Day · 23 Oct 2026'), /calendar showed 3 cal-child-* chips (cal-child-all + 2 kids), 3 published items, 0 Draft badges, no new-event-button. Teacher (teacher@sunrise.demo): teacher-calendar-row -> /calendar read-only (no new-event-button), 3 items including the whole-school ETEST cancelled event. Leader read-only messaging: created escalated conversation via API (parent creates + teacher escalates). Backend POST /conversations/{id}/messages as principal returns 403 with detail 'School leaders can review escalated conversations but not post in them'. Frontend /messages/{id}: Principal sees msg-readonly-note ('You are viewing this escalated conversation. Replies come from the class teacher.') and thread-list; msg-input and msg-send are hidden. Teacher and Parent on the same thread still see msg-input + msg-send and no readonly note. No deprecated expo packages (expo-av/expo-barcode-scanner/expo-background-fetch) in repo. No red screen errors. Only console noise observed is initial 401 on /auth/me before login — expected.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/pytest/m3_events_iter16.xml",
+    "/app/test_reports/pytest/m3_events_edges_iter16.xml",
+    "/app/test_reports/pytest/full_suite_iter16.xml",
+    "/app/backend/tests/test_m3_events.py",
+    "/app/backend/tests/test_m3_events_edges.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_events._check_dates enforces end>=start, span<=60 days, HH:MM 24h regex, start_time required before end_time, and end>start when on the same day. Validation surfaces as 400 (business) or 422 (pydantic) — covered by test_validation_edit_and_tenancy + new edge probes.",
+    "Status transitions are strictly whitelisted (publish from draft only; cancel from draft or published). Cancel of a published event requires a non-empty reason; draft cancel is silent. State machine is race-safe via `update_one({_id, status: e[status]})` + 409 on modified_count==0.",
+    "Audience is validated via routes_notices._validate_audience and persisted as-is; `_audience_or` builds the Mongo OR for school/classes/sections scope — parent and teacher scopes correctly compose (teacher via teacher_assignments.section_id). Non-managers see `published` plus `cancelled` events only when they were previously published_at!=None — hides silent draft cancellations from families.",
+    "Role-scoped projection in _event_out strips `created_by`, `audience`, `status_history` for non-managers — audit data never leaks to parents/teachers via /calendar.",
+    "Cross-tenant isolation verified: Greenfield owner receives 404 on Sunrise event ids for both /action and PATCH, and the event does not appear in their /calendar.",
+    "Exam items in /calendar are merged in via _exam_items and inherit the parent/teacher section filter correctly (parent sees exam only when child's section_id ∈ exam.section_ids) — verified in test_exams_appear_in_calendar_scoped.",
+    "/calendar/upcoming reuses the main calendar() handler for a 60-day window and strips cancelled items; limit bounded to 1..10 (422 outside). Confirmed cancelled events do not appear in upcoming (parent flow + new edge probe).",
+    "Frontend calendar.tsx: `manager = can('notices.manage')` correctly gates new-event-button and the EventForm. EventDetail hides the cancel/publish footer when !canAct, so parents/teachers get a read-only detail sheet.",
+    "Frontend thread view (messages/[id].tsx line 31): `readOnly = !teacher && membership?.role !== 'parent'` — a clean, role-based guard. The readOnly branch replaces the KeyboardStickyView composer entirely with msg-readonly-note, so leaders cannot even see a disabled compose box. Combined with the backend 403 in routes_messaging._post (admin side guard), this closes both the UX and API side of the fix.",
+    "No file exceeds the 700-line soft limit (routes_events.py=233, calendar.tsx screen=65, components/calendar.tsx=95, event-form.tsx=95, messages/[id].tsx=113)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_m3_events_edges.py (new)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "One ETEST event ('ETEST ui draft') and one MTEST conversation ('MTEST readonly ui') were created via the Principal UI / API during testing. Both have been cleaned up via direct Mongo delete (events {title: /^ETEST/}: 1 deleted; conversations {topic: /^MTEST/}: 1 + its messages deleted). Backend pytest _cleanup() purges its own fixtures.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "M3M3 complete. Entry rows: staff/command.tsx -> quick-calendar; teacher/today.tsx -> teacher-calendar-row; parent-notices-row.tsx -> open-parent-calendar (subtitle shows next event). Calendar screen testIDs: cal-month-label, cal-prev, cal-next, cal-day-YYYY-MM-DD, cal-item-{id}, cal-show-month, new-event-button, calendar-list, calendar-empty, cal-child-{id} chips (parent only, if >1 kid). Create sheet (event-sheet): event-title-input, event-cat-* chips, event-start-input, event-end-input, event-start-time-input, event-end-time-input, event-location-input, event-desc-input, event-scope-* seg, event-sec-{section_id}, event-save-draft, event-publish. Detail sheet (event-detail-sheet): event-detail-when, event-detail-cancelled, event-cancel-reason (only for published managed events), event-cancel, event-detail-publish (only for drafts). Leader read-only messaging: /messages/{id} renders msg-readonly-note instead of msg-input/msg-send when membership.role is owner/principal/school_admin. Backend POST /conversations/{id}/messages for those roles returns 403. Demo events are seeded as `demo:true` (idempotent) and come as whole-school published, 4 per school anchored to today's date +6/+12/+20..+24/+30 days.",
+  "rca_of_issue": "Not applicable — all requested flows pass. The leader read-only enforcement is in both layers: UI gate at messages/[id].tsx:31 (`readOnly = !teacher && role !== 'parent'`), and API gate inside routes_messaging._post rejecting admin-side POSTs with 403."
+}

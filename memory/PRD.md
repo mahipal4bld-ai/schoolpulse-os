@@ -49,3 +49,10 @@ Expo (native + web) → FastAPI `/api` → MongoDB. See `/app/docs/ARCHITECTURE.
 ## Milestone 3 Parent Connect — IN PROGRESS (branch milestone-3-parent-connect)
 - DONE+tested: Module 1 Notices (read≠ack, scheduling IST, revisions, targeting), Module 2 Parent–teacher messaging (scoped, idempotent, cursor, rate limit, escalation)
 - NEXT: Modules 3–10 (events/calendar, PTM atomic booking, help desk, student leave+forms, consent-gated classroom media, notifications outbox, AI assistant w/ human approval, engagement intelligence) + final acceptance journeys. See /app/docs/M3_PROGRESS.md
+
+
+## M3 Module 3 — School Events & Calendar (DONE)
+- `routes_events.py`: events CRUD (draft/publish/cancel w/ reason, audit), targeted audience (school/classes/sections), unified `/api/calendar?start&end&student_id` feed merging exam schedule, `/api/calendar/upcoming`; role scoping (manager all incl. drafts; teacher own sections; parent children's sections; others published only). Demo events seeded.
+- Frontend `/calendar` month grid + agenda, create/detail sheets; entry rows for staff, teacher, parent.
+- Leader read-only on escalated conversations (UI hidden + backend 403).
+- Tests: test_m3_events.py, test_m3_events_edges.py; full suite 110 passed.

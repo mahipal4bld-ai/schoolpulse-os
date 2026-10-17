@@ -212,6 +212,8 @@ async def send(cid: str, body: MsgIn, ctx: Ctx = Depends(school_ctx)):
     if not c:
         raise HTTPException(404, "Conversation not found")
     side = await _access(ctx, c)
+    if side == "admin":
+        raise HTTPException(403, "School leaders can review escalated conversations but not post in them")
     if side == "teacher" and c["status"] == "closed":
         raise HTTPException(400, "Re-open the conversation to reply")
     return await _post(ctx, c, side, body)

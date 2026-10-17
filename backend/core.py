@@ -333,3 +333,5 @@ async def ensure_indexes():
     await db.messages.create_index([("conversation_id", 1), ("_id", -1)])
     await db.messages.create_index([("school_id", 1), ("sender_user_id", 1), ("created_at", -1)])
     await db.download_grants.create_index("expires_at", expireAfterSeconds=0)
+    await db.events.create_index([("school_id", 1), ("status", 1), ("start_date", 1)])
+    await db.events.create_index([("school_id", 1), ("end_date", 1)])

@@ -27,6 +27,8 @@ export default function Thread() {
   const toast = useToast();
   const qc = useQueryClient();
   const teacher = membership?.role === "teacher";
+  // School leaders only review escalated threads; they never post into a parent–teacher conversation.
+  const readOnly = !teacher && membership?.role !== "parent";
   const key = ["thread", membership?.school_id, id];
   // Newest page polls every 5 s; older pages load via cursor.
   const q = useInfiniteQuery({
@@ -84,6 +86,11 @@ export default function Thread() {
           )}
         />
       )}
+      {readOnly ? (
+        <View testID="msg-readonly-note" style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: insets.bottom + spacing.md, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border }}>
+          <Txt variant="caption">You are viewing this escalated conversation. Replies come from the class teacher.</Txt>
+        </View>
+      ) : (
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
         <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: insets.bottom + spacing.sm, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, gap: spacing.xs }}>
           {teacher && tpl.data?.items.length ? (
@@ -100,6 +107,7 @@ export default function Thread() {
           </View>
         </View>
       </KeyboardStickyView>
+      )}
     </View>
   );
 }
