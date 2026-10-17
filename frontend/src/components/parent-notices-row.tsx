@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { Megaphone } from "phosphor-react-native";
+import { ChatsCircle, Megaphone } from "phosphor-react-native";
 import React from "react";
 
 import { api } from "@/src/api";
@@ -17,6 +17,7 @@ export function ParentNoticesRow() {
   const pendingAck = q.data?.items.filter((n) => n.requires_ack && !n.acknowledged).length ?? 0;
   return (
     <Card style={{ paddingVertical: 0 }} testID="parent-notices-card">
+      <Row testID="open-parent-messages" icon={<IconTile><ChatsCircle size={18} color={colors.onBrandTertiary} /></IconTile>} title="Messages" subtitle="Talk to your child's teachers" onPress={() => router.push("/messages")} />
       <Row testID="open-parent-notices" last icon={<IconTile><Megaphone size={18} color={colors.onBrandTertiary} /></IconTile>} title="School notices" subtitle={q.data ? (q.data.unread ? `${q.data.unread} new${pendingAck ? ` · ${pendingAck} need acknowledgement` : ""}` : pendingAck ? `${pendingAck} need acknowledgement` : "You're up to date") : "Announcements from school"} onPress={() => router.push("/parent-notices")} />
     </Card>
   );

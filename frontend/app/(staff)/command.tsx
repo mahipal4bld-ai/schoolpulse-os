@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { BookOpenText, Books, CalendarCheck, ChartLineUp, Exam, Megaphone, Table, ChalkboardTeacher, IdentificationBadge, NotePencil, PaintBrush, Student, UserPlus, Users, UsersThree } from "phosphor-react-native";
+import { BookOpenText, Books, CalendarCheck, ChartLineUp, ChatsCircle, Exam, Megaphone, Table, ChalkboardTeacher, IdentificationBadge, NotePencil, PaintBrush, Student, UserPlus, Users, UsersThree } from "phosphor-react-native";
 import React from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -229,6 +229,9 @@ export default function CommandCentre() {
             ) : null}
             {can("academic.manage") ? (
               <Row testID="quick-insights" icon={<IconTile><ChartLineUp size={18} color={colors.onBrandTertiary} /></IconTile>} title="Academic insights" subtitle="Attendance, coverage, results and staff trends" onPress={() => router.push("/academic-insights")} />
+            ) : null}
+            {can("notices.manage") ? (
+              <Row testID="quick-escalations" icon={<IconTile><ChatsCircle size={18} color={colors.onBrandTertiary} /></IconTile>} title="Escalated messages" subtitle="Parent–teacher conversations needing the office" onPress={() => router.push("/messages")} />
             ) : null}
             {can("notices.manage") ? (
               <Row testID="quick-notices" icon={<IconTile><Megaphone size={18} color={colors.onBrandTertiary} /></IconTile>} title="Notices" subtitle="Publish announcements, track reads and acknowledgements" onPress={() => router.push("/notices")} />

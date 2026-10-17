@@ -45,3 +45,7 @@ Expo (native + web) → FastAPI `/api` → MongoDB. See `/app/docs/ARCHITECTURE.
 - Document-level file ACL (backend/file_access.py), atomic timetable clash unique indexes, GitHub Actions CI (.github/workflows/ci.yml) + dependabot
 - Backend 102 passed / 0 failed / 1 skipped (+ restart test 1 passed separately); jest 26; branch milestone-2-audit-remediation @ 986954c. Docs: /app/docs/M2_AUDIT_REMEDIATION.md
 - Next: Milestone 3 Parent Connect (scope to confirm)
+
+## Milestone 3 Parent Connect — IN PROGRESS (branch milestone-3-parent-connect)
+- DONE+tested: Module 1 Notices (read≠ack, scheduling IST, revisions, targeting), Module 2 Parent–teacher messaging (scoped, idempotent, cursor, rate limit, escalation)
+- NEXT: Modules 3–10 (events/calendar, PTM atomic booking, help desk, student leave+forms, consent-gated classroom media, notifications outbox, AI assistant w/ human approval, engagement intelligence) + final acceptance journeys. See /app/docs/M3_PROGRESS.md

@@ -46,6 +46,9 @@ async def can_read_file(user_id: str, role: str, f: dict) -> bool:
             from routes_homework import parent_can_read_file
             return await parent_can_read_file(user_id, f)
         return False
+    if f.get("purpose") == "message":
+        from routes_messaging import can_read_message_file
+        return await can_read_message_file(user_id, role, f)
     if f.get("purpose") == "notice":
         if role in ACADEMIC_LEADERS:
             return True

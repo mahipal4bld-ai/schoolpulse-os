@@ -1,0 +1,1 @@
+export type Conv = { id: string; topic: string; status: string; student_name: string; teacher_name: string; guardian_name: string; unread: number; last_preview?: string; last_message_at: string; follow_up?: boolean };
