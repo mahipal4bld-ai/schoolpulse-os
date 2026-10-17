@@ -37,7 +37,7 @@ export default function NewPtm() {
   const [f, setF] = useState({ name: "", year: "", sections: [] as string[], teachers: [] as string[], dates: [] as string[], pick: "", start: "09:00", end: "12:00",
     slot: "10", brk: "0", cap: "1", opensD: "", opensT: "", closesD: "", closesT: "", cancelH: "12", reschH: "12", perChild: "3",
     mode: "physical" as "physical" | "online", location: "", link: "", approval: true });
-  const set = (p: Partial<typeof f>) => setF({ ...f, ...p });
+  const set = (p: Partial<typeof f>) => setF((cur) => ({ ...cur, ...p }));  // functional: native pickers call back after async dialogs
   const year = f.year || o.data?.years.find((y) => y.is_current)?.id || o.data?.years[0]?.id || "";
   const secs = (o.data?.sections ?? []).filter((s) => s.academic_year_id === year);
   const teachers = (o.data?.teachers ?? []).filter((t) => t.section_ids.some((s) => f.sections.includes(s)));

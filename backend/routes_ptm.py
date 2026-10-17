@@ -9,13 +9,14 @@ Concurrency model (never read-then-write):
   Every acquired resource is released if a later step fails. Session cancellation flips slots first, then bookings,
   and the booking path re-checks its slot after insert so no confirmed booking can survive a cancelled session.
 """
+import logging
 from datetime import date, datetime, timedelta, timezone
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field, field_validator
 from pymongo import ReturnDocument
-from pymongo.errors import DuplicateKeyError
+from pymongo.errors import BulkWriteError, DuplicateKeyError
 
 from core import Ctx, audit, db, need, now_utc, oid, out, school_ctx
 from routes_directory import _parent_links
@@ -24,6 +25,7 @@ from routes_notices import IST, _ist, sanitize
 from routes_notifications import notify
 
 router = APIRouter()
+logger = logging.getLogger("schoolpulse")
 ACTIVE = ("confirmed",)
 OUTCOMES = {"completed", "no_show"}
 
@@ -203,34 +205,72 @@ async def _block_reason(school_id: str, sess_id, teacher_id: str, d: str, a: dat
     return None
 
 
+def _expected_slots(s: dict, school_id: str, t: datetime) -> list[dict]:
+    sid = str(s["_id"])
+    return [{"school_id": school_id, "session_id": sid, "teacher_id": tid, "date": d, "start_time": a, "end_time": b,
+             "start_at": _at(d, a), "end_at": _at(d, b), "capacity": s["capacity"], "booked": 0, "status": "available",
+             "block_reason": None, "created_at": t}
+            for tid in s["teacher_ids"] for d in s["dates"] for a, b in _slot_times(s)]
+
+
+async def _missing_slots(sid: str, docs: list[dict]) -> int:
+    have = {(x["teacher_id"], _aware(x["start_at"])) async for x in db.ptm_slots.find({"session_id": sid}, {"teacher_id": 1, "start_at": 1})}
+    return sum(1 for d in docs if (d["teacher_id"], d["start_at"]) not in have)
+
+
 async def _publish(ctx: Ctx, s: dict):
+    """Two-phase, retryable publication.
+
+    draft -> `publishing` (never visible to families/teachers) -> insert every expected slot (idempotent thanks to the
+    unique (session_id, teacher_id, start_at) index) -> verify ALL expected slots exist -> `published`.
+    Only duplicate-key errors from a previous attempt are tolerated; any other database error propagates, the session
+    stays `publishing` with the error recorded, and publishing can simply be retried.
+    """
     bad = await _closures(ctx.school_id, s["dates"])
     if bad:
         raise HTTPException(409, f"School is closed on {', '.join(bad)}")
     t = now_utc()
-    r = await db.ptm_sessions.update_one({"_id": s["_id"], "status": "draft"},
-                                         {"$set": {"status": "published", "published_at": t, "updated_at": t},
-                                          "$push": {"history": _hist(ctx, "publish")}})
+    sid = str(s["_id"])
+    r = await db.ptm_sessions.update_one({"_id": s["_id"], "status": {"$in": ["draft", "publishing"]}},
+                                         {"$set": {"status": "publishing", "updated_at": t, "publish_error": None},
+                                          "$push": {"history": _hist(ctx, "publish_started")}})
     if not r.modified_count:
         raise HTTPException(409, "This session is no longer a draft")
-    sid = str(s["_id"])
-    docs = []
-    for tid in s["teacher_ids"]:
-        for d in s["dates"]:
-            for a, b in _slot_times(s):
-                docs.append({"school_id": ctx.school_id, "session_id": sid, "teacher_id": tid, "date": d, "start_time": a,
-                             "end_time": b, "start_at": _at(d, a), "end_at": _at(d, b), "capacity": s["capacity"],
-                             "booked": 0, "status": "available", "block_reason": None, "created_at": t})
+    docs = _expected_slots(s, ctx.school_id, t)
     try:
-        await db.ptm_slots.insert_many(docs, ordered=False)
-    except Exception:  # noqa: BLE001 — duplicate retries are fine (unique index), others re-raise below
-        pass
+        try:
+            await db.ptm_slots.insert_many([dict(d) for d in docs], ordered=False)
+        except BulkWriteError as e:
+            fatal = [w for w in e.details.get("writeErrors", []) if w.get("code") != 11000]
+            if fatal or e.details.get("writeConcernErrors"):
+                raise
+        missing = await _missing_slots(sid, docs)
+        if missing:
+            raise RuntimeError(f"{missing} of {len(docs)} slots could not be created")
+    except Exception as e:
+        await db.ptm_sessions.update_one({"_id": s["_id"], "status": "publishing"},
+                                         {"$set": {"publish_error": str(e)[:300], "updated_at": now_utc()},
+                                          "$push": {"history": _hist(ctx, "publish_failed")}})
+        logger.exception("PTM publish failed for %s", sid)
+        if isinstance(e, RuntimeError):
+            raise HTTPException(503, "Slots could not all be created, so nothing was published. Please retry publishing.") from e
+        raise
     # conflicts are evaluated after our own insert so two concurrent publishes always see each other
     async for sl in db.ptm_slots.find({"session_id": sid, "status": "available", "booked": 0}):
         why = await _block_reason(ctx.school_id, sid, sl["teacher_id"], sl["date"], sl["start_at"], sl["end_at"])
         if why:
             await db.ptm_slots.update_one({"_id": sl["_id"], "booked": 0, "status": "available"},
                                           {"$set": {"status": "blocked", "block_reason": why, "blocked_by": "system"}})
+    t = now_utc()
+    r = await db.ptm_sessions.update_one({"_id": s["_id"], "status": "publishing"},
+                                         {"$set": {"status": "published", "published_at": t, "updated_at": t, "slot_count": len(docs)},
+                                          "$push": {"history": _hist(ctx, "publish")}})
+    if not r.modified_count:
+        now = await db.ptm_sessions.find_one({"_id": s["_id"]}, {"status": 1})
+        if now and now["status"] == "cancelled":  # cancelled mid-generation: make sure late-inserted slots are dead too
+            await db.ptm_slots.update_many({"session_id": sid}, {"$set": {"status": "cancelled"}})
+            raise HTTPException(409, "This session was cancelled while publishing")
+        raise HTTPException(409, "This session was already published")  # a concurrent identical publish won
     await audit(ctx.user_id, "ptm.publish", "ptm_session", sid, ctx.school_id, {"slots": len(docs)})
 
 
@@ -302,7 +342,7 @@ async def cancel_session(sid: str, reason: str = Query(min_length=3, max_length=
     s = await _session(ctx, sid)
     reason = sanitize(reason)
     t = now_utc()
-    r = await db.ptm_sessions.update_one({"_id": s["_id"], "status": {"$in": ["draft", "published"]}},
+    r = await db.ptm_sessions.update_one({"_id": s["_id"], "status": {"$in": ["draft", "publishing", "published"]}},
                                          {"$set": {"status": "cancelled", "cancel_reason": reason, "cancelled_at": t, "updated_at": t},
                                           "$push": {"history": _hist(ctx, "cancel", reason=reason)}})
     if not r.modified_count:
@@ -378,10 +418,10 @@ async def get_session(sid: str, ctx: Ctx = Depends(school_ctx)):
         return o
     if ctx.role == "teacher":
         t = await _my_teacher(ctx)
-        if not t or str(t["_id"]) not in s["teacher_ids"] or s["status"] == "draft":
+        if not t or str(t["_id"]) not in s["teacher_ids"] or s["status"] not in ("published", "cancelled"):
             raise HTTPException(404, "PTM session not found")
         return _session_out(s, False)
-    if ctx.role != "parent" or s["status"] == "draft" or not s.get("published_at"):
+    if ctx.role != "parent" or s["status"] not in ("published", "cancelled") or not s.get("published_at"):
         raise HTTPException(404, "PTM session not found")
     children = []
     for lk in await _parent_links(ctx):
@@ -447,7 +487,7 @@ async def _eligible(ctx: Ctx, s: dict, student_id: str, teacher_id: str) -> dict
         raise HTTPException(403, "Only parents can book PTM appointments")
     await _guardian(ctx, student_id)
     stu = await db.students.find_one({"_id": oid(student_id), "school_id": ctx.school_id, "status": "active"})
-    if not stu or s["status"] == "draft" or not s.get("published_at") or stu["section_id"] not in s["section_ids"]:
+    if not stu or s["status"] not in ("published", "cancelled") or not s.get("published_at") or stu["section_id"] not in s["section_ids"]:
         raise HTTPException(404, "PTM session not found")
     if teacher_id not in s["teacher_ids"] or not await _teacher_teaches(ctx.school_id, teacher_id, stu["section_id"]):
         raise HTTPException(404, "This teacher is not available for your child in this PTM")

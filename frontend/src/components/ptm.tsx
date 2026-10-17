@@ -9,7 +9,7 @@ import { formatDate } from "@/src/format";
 import { radius, spacing, useTheme } from "@/src/theme";
 
 export type PtmSession = {
-  id: string; name: string; status: "draft" | "published" | "cancelled"; dates: string[]; start_time: string; end_time: string;
+  id: string; name: string; status: "draft" | "publishing" | "published" | "cancelled"; publish_error?: string | null; dates: string[]; start_time: string; end_time: string;
   slot_minutes: number; break_minutes: number; capacity: number; mode: "physical" | "online"; location: string; meeting_link?: string;
   cancel_cutoff_hours: number; reschedule_cutoff_hours: number; max_per_child: number; cancel_reason?: string | null;
   booking_opens_at?: string | null; booking_closes_at?: string | null; section_ids: string[]; teacher_ids: string[];
@@ -31,7 +31,8 @@ export const BOOKING_STATUS: Record<string, { label: string; tone: "neutral" | "
   cancelled_parent: { label: "Cancelled by parent", tone: "error" },
   cancelled_school: { label: "Cancelled by school", tone: "error" },
 };
-export const SESSION_TONE = { draft: "warning", published: "success", cancelled: "error" } as const;
+export const SESSION_TONE = { draft: "warning", publishing: "warning", published: "success", cancelled: "error" } as const;
+export const SESSION_LABEL = { draft: "Draft", publishing: "Publishing incomplete", published: "Open", cancelled: "Cancelled" } as const;
 export const slotWhen = (d: string, a: string, b?: string) => `${formatDate(d)} · ${timeLabel(a)}${b ? ` – ${timeLabel(b)}` : ""}`;
 export const datesLabel = (s: PtmSession) => s.dates.map(formatDate).join(", ");
 

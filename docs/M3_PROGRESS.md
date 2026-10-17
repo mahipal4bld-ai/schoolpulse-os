@@ -83,10 +83,39 @@ Branch: `milestone-3-parent-connect`, based on `milestone-2-audit-remediation` /
   - Entry rows on staff, teacher and parent home screens, plus a calendar deep link.
 - **Tests:** `test_m3_ptm.py` (6, including a real 6-way concurrent last-slot test, a capacity-2 slot, and 5-way identical retries) and `test_m3_ptm_edges.py` (7).
 
+## Module 4 reliability fix — publishing: DONE, tested
+- **Problem:** `_publish()` used to swallow every exception during slot insertion. It now publishes in two phases:
+  1. The session moves from `draft` to `publishing`, which is not visible to parents or teachers and cannot be booked.
+  2. Every expected slot is inserted. Retries are idempotent thanks to the unique (session_id, teacher_id, start_at) index. Only duplicate-key write errors are tolerated; any other database error propagates, and the session stays `publishing` with `publish_error` and a `publish_failed` history entry.
+  3. The server checks that every expected slot exists. A missing slot, even after a silent short write, returns 503.
+  4. Conflict blocking runs.
+  5. The session moves from `publishing` to `published` with `slot_count`.
+- **Retries and races:**
+  - Retrying with `POST /ptm/sessions/{id}/publish` recovers.
+  - Concurrent publishes produce exactly one set of slots.
+  - Cancelling during an incomplete publish works.
+  - The admin UI shows a "Publishing incomplete" state with a "Retry publishing" button.
+- **Tests:** `tests/test_m3_ptm_publish_faults.py` (5). These run `_publish` in-process against real MongoDB with a wrapped collection and cover:
+  - a mid-insert `AutoReconnect` after partial writes;
+  - a silent short write;
+  - a duplicate retry of a published session;
+  - 4 concurrent publishes;
+  - cancelling while incomplete.
+- **Invalid event times:**
+  - Jest UI tests (`__tests__/event-form*.test.tsx`) confirm that an end time before the start time disables Save draft, Publish and Save changes, and that fixing it re-enables them.
+  - The Playwright web check (`frontend/e2e/event_time_validation.py`) passed in the preview.
+  - The edit test exposed a stale-state risk with asynchronous native pickers. All picker setters now use functional state updates.
+- **Accessibility:** `Button` now exposes `accessibilityState.disabled`.
+
 ## Remaining (not started)
 Module 5 Help desk · Module 6 Student leave & digital forms · Module 7 Classroom moments (consent-gated media) · Module 8 Notifications centre (builds on `notifications`) · Module 9 AI assistant (provider-gated, human approval) · Module 10 Parent engagement intelligence · Final acceptance journeys.
 
-## Test totals at this checkpoint
+## Test totals at this checkpoint (after reliability fix)
+- **Backend:** 132 passed, 1 skipped. The skipped restart test, run on its own with `RUN_RESTART_TESTS=1 -n 0 -k restart`, passes 1/1. One run hit a temporary object-storage 503 in `test_cannot_attach_other_schools_file`; it passed on rerun and in the next full run.
+- **Frontend:** Jest 31 passed; TypeScript clean; Hindi strings 581/581.
+- **GitHub Actions:** not verified. This workspace has no git remote or `gh` CLI, so CI only runs after pushing with Emergent's Save to GitHub.
+
+## Earlier totals
 - **Backend** `pytest tests -q`: 127 passed, 0 failed, 1 skipped. The skipped test is restart persistence; it runs separately with `RUN_RESTART_TESTS=1`.
 - **Frontend:** Jest 28 passed; TypeScript clean; Hindi strings 580/580.
 - **Not verified:** iOS and Android native picker behaviour on a real device.

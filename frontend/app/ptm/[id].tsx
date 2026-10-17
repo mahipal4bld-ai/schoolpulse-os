@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api } from "@/src/api";
 import { useAuth } from "@/src/auth";
 import { timeLabel } from "@/src/components/date-time-field";
-import { Booking, BookingCard, datesLabel, PtmSession, SESSION_TONE, Slot, SlotGrid, slotWhen } from "@/src/components/ptm";
+import { Booking, BookingCard, datesLabel, PtmSession, SESSION_LABEL, SESSION_TONE, Slot, SlotGrid, slotWhen } from "@/src/components/ptm";
 import { Sheet } from "@/src/components/sheet";
 import { useToast } from "@/src/components/toast";
 import { Badge, Button, Card, ChipRow, EmptyState, ErrorState, Field, Header, SectionTitle, SkeletonList, Txt } from "@/src/components/ui";
@@ -123,6 +123,7 @@ function AdminView({ s }: { s: AdminSession }) {
   const router = useRouter();
   const toast = useToast();
   const qc = useQueryClient();
+  const { colors } = useTheme();
   const [teacher, setTeacher] = useState(s.teachers[0]?.teacher_id ?? "");
   const [cancel, setCancel] = useState<string | null>(null);
   const bk = useQuery({ queryKey: ["ptm-session-bookings", membership?.school_id, s.id], enabled: s.status !== "draft", queryFn: () => api<{ items: Booking[]; total: number }>(`/ptm/sessions/${s.id}/bookings?limit=100`) });
@@ -137,13 +138,14 @@ function AdminView({ s }: { s: AdminSession }) {
         <Txt variant="caption" raw>{`Completed ${s.stats.by_status.completed ?? 0} · No-show ${s.stats.by_status.no_show ?? 0} · Cancelled ${(s.stats.by_status.cancelled_parent ?? 0) + (s.stats.by_status.cancelled_school ?? 0)}`}</Txt>
         <Txt variant="caption" raw>{s.section_labels.join(", ")}</Txt>
       </Card>
+      {s.status === "publishing" ? <Card testID="ptm-publish-incomplete"><Txt variant="label" color={colors.error}>Publishing did not finish, so families cannot see this session yet. Retry publishing.</Txt></Card> : null}
       {s.status !== "cancelled" ? (
         <View style={{ flexDirection: "row", gap: spacing.sm }}>
-          {s.status === "draft" ? <Button style={{ flex: 1 }} testID="ptm-publish-session" title="Publish" loading={publish.isPending} onPress={() => publish.mutate()} /> : null}
+          {s.status === "draft" || s.status === "publishing" ? <Button style={{ flex: 1 }} testID="ptm-publish-session" title={s.status === "publishing" ? "Retry publishing" : "Publish"} loading={publish.isPending} onPress={() => publish.mutate()} /> : null}
           <Button style={{ flex: 1 }} variant="outline" testID="ptm-cancel-session" title="Cancel session" onPress={() => setCancel("")} />
         </View>
       ) : null}
-      {s.status !== "draft" ? (
+      {s.status === "published" || s.status === "cancelled" ? (
         <View style={{ gap: spacing.sm }}>
           <SectionTitle title="Teacher availability" />
           <View style={{ marginHorizontal: -spacing.lg }}><ChipRow testIDPrefix="ptm-admin-teacher" value={teacher} onChange={setTeacher} options={s.teachers.map((t) => ({ value: t.teacher_id, label: `${t.name} · ${t.booked}/${t.cap}${t.requests ? ` · ${t.requests} req` : ""}` }))} /></View>
@@ -171,7 +173,7 @@ export default function PtmSessionScreen() {
   const s = q.data;
   return (
     <View style={{ flex: 1, backgroundColor: colors.surfaceSecondary }}>
-      <Header back title={s?.name ?? "PTM"} subtitle={s ? `${datesLabel(s)} · ${s.start_time}–${s.end_time} IST` : undefined} right={s ? <Badge testID="ptm-session-status" tone={SESSION_TONE[s.status]} label={s.status === "published" ? "Open" : s.status === "draft" ? "Draft" : "Cancelled"} /> : undefined} />
+      <Header back title={s?.name ?? "PTM"} subtitle={s ? `${datesLabel(s)} · ${s.start_time}–${s.end_time} IST` : undefined} right={s ? <Badge testID="ptm-session-status" tone={SESSION_TONE[s.status]} label={SESSION_LABEL[s.status]} /> : undefined} />
       {q.isLoading ? <SkeletonList /> : q.isError ? <ErrorState message={(q.error as Error).message} onRetry={() => q.refetch()} /> : (
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + spacing.xl, gap: spacing.lg }}>
           {s!.status === "cancelled" ? <Card testID="ptm-cancelled-banner"><Txt variant="label" raw color={colors.error}>{`This PTM was cancelled${s!.cancel_reason ? `: ${s!.cancel_reason}` : ""}`}</Txt></Card> : null}

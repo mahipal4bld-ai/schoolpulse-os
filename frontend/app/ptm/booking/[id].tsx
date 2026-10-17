@@ -92,7 +92,7 @@ function StaffActions({ b, side, refresh }: { b: Booking; side: "teacher" | "adm
         {fu ? (
           <>
             <Field testID="ptm-followup-title" label="Task" value={fu.title} onChangeText={(title) => setFu({ ...fu, title })} placeholder="e.g. Share reading list" />
-            <DateField testID="ptm-followup-due" label="Follow-up date" optional value={fu.due} onChange={(due) => setFu({ ...fu, due })} />
+            <DateField testID="ptm-followup-due" label="Follow-up date" optional value={fu.due} onChange={(due) => setFu((p) => p && { ...p, due })} />
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <Txt variant="body">Share with guardian</Txt>
               <Switch testID="ptm-followup-shared" value={fu.shared} onValueChange={(v) => setFu({ ...fu, shared: v })} />

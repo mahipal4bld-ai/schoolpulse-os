@@ -2,6 +2,9 @@
 // Every static UI string in app/ and src/components must have an entry; enforced by
 // `node scripts/i18n-check.js` (also run in jest).
 export const hi: Record<string, string> = {
+  "Publishing did not finish, so families cannot see this session yet. Retry publishing.": "प्रकाशन पूरा नहीं हुआ, इसलिए परिवार अभी यह सत्र नहीं देख सकते। फिर से प्रकाशित करें।",
+  "Retry publishing": "फिर से प्रकाशित करें",
+  "Publishing incomplete": "प्रकाशन अधूरा",
   "1 · Choose child": "1 · बच्चा चुनें",
   "Academic year": "शैक्षणिक वर्ष",
   "Add a meeting date": "बैठक की तिथि जोड़ें",

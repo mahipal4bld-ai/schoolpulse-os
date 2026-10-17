@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api } from "@/src/api";
 import { useAuth } from "@/src/auth";
 import { DateField, TimeField } from "@/src/components/date-time-field";
-import { Booking, BookingCard, datesLabel, InsightsPanel, PtmSession, SESSION_TONE, useInsights } from "@/src/components/ptm";
+import { Booking, BookingCard, datesLabel, InsightsPanel, PtmSession, SESSION_LABEL, SESSION_TONE, useInsights } from "@/src/components/ptm";
 import { Sheet } from "@/src/components/sheet";
 import { useToast } from "@/src/components/toast";
 import { Badge, Button, Card, ChipRow, EmptyState, ErrorState, Field, Header, Segmented, SectionTitle, SkeletonList, Txt } from "@/src/components/ui";
@@ -22,7 +22,7 @@ function SessionCard({ s, onPress }: { s: PtmSession; onPress: () => void }) {
       <Card style={{ gap: spacing.xs }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
           <Txt variant="label" raw style={{ flex: 1 }} numberOfLines={1}>{s.name}</Txt>
-          <Badge tone={SESSION_TONE[s.status]} label={s.status === "published" ? "Open" : s.status === "draft" ? "Draft" : "Cancelled"} />
+          <Badge tone={SESSION_TONE[s.status]} label={SESSION_LABEL[s.status]} />
         </View>
         <Txt variant="caption" raw>{datesLabel(s)} · {s.start_time}–{s.end_time} IST</Txt>
         {s.capacity_total !== undefined ? <Txt variant="caption" raw>{`${s.booked_total}/${s.capacity_total} booked`}</Txt> : null}
@@ -121,12 +121,12 @@ function TeacherHome() {
       <Sheet visible={!!un} onClose={() => setUn(null)} title="Mark unavailable" testID="ptm-unavailable-sheet" footer={<Button testID="ptm-unavailable-save" title="Save" disabled={!un?.start || !un?.end || un.end <= un.start} loading={save.isPending} onPress={() => save.mutate()} />}>
         {un ? (
           <>
-            <DateField testID="un-date" label="Date" value={un.date} min={today} onChange={(date) => setUn({ ...un, date })} />
+            <DateField testID="un-date" label="Date" value={un.date} min={today} onChange={(date) => setUn((p) => p && { ...p, date })} />
             <View style={{ flexDirection: "row", gap: spacing.sm }}>
-              <View style={{ flex: 1 }}><TimeField testID="un-start" label="From" value={un.start} onChange={(start) => setUn({ ...un, start })} /></View>
-              <View style={{ flex: 1 }}><TimeField testID="un-end" label="To" value={un.end} onChange={(end) => setUn({ ...un, end })} error={un.start && un.end && un.end <= un.start ? "End time must be after the start time" : undefined} /></View>
+              <View style={{ flex: 1 }}><TimeField testID="un-start" label="From" value={un.start} onChange={(start) => setUn((p) => p && { ...p, start })} /></View>
+              <View style={{ flex: 1 }}><TimeField testID="un-end" label="To" value={un.end} onChange={(end) => setUn((p) => p && { ...p, end })} error={un.start && un.end && un.end <= un.start ? "End time must be after the start time" : undefined} /></View>
             </View>
-            <Field testID="un-reason" label="Reason (optional)" value={un.reason} onChangeText={(reason) => setUn({ ...un, reason })} placeholder="e.g. Board duty" />
+            <Field testID="un-reason" label="Reason (optional)" value={un.reason} onChangeText={(reason) => setUn((p) => p && { ...p, reason })} placeholder="e.g. Board duty" />
             <Txt variant="caption">Free slots in this period are blocked (or sent to the office for approval). Booked meetings are not changed.</Txt>
           </>
         ) : null}

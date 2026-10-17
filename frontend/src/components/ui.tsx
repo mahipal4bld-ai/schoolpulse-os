@@ -87,6 +87,7 @@ export function Button({
       testID={testID}
       accessibilityRole="button"
       disabled={off}
+      accessibilityState={{ disabled: !!off, busy: !!loading }}
       onPress={() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
         onPress?.();

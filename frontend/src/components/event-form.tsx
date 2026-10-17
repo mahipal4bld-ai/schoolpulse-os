@@ -15,7 +15,7 @@ type Opt = { section_id: string; label: string };
 const label = (c: string) => (c === "ptm" ? "PTM" : c[0].toUpperCase() + c.slice(1));
 
 /** Client-side checks mirror the server rules (server stays authoritative). */
-function problems(f: { start: string; end: string; startTime: string; endTime: string }) {
+export function eventFormProblems(f: { start: string; end: string; startTime: string; endTime: string }) {
   const e: Record<string, string> = {};
   if (!f.start) e.start = "Choose a start date";
   if (f.end && f.end < f.start) e.end = "End date must be on or after the start date";
@@ -35,7 +35,7 @@ export function EventForm({ visible, day, onClose, initial }: { visible: boolean
     if (!visible) return;
     setF(initial ? { ...blank, title: initial.title, description: initial.description, category: initial.category as (typeof CATS)[number], start: initial.start_date, end: initial.end_date === initial.start_date ? "" : initial.end_date, startTime: initial.start_time ?? "", endTime: initial.end_time ?? "", location: initial.location } : { ...blank, start: day });
   }, [visible]);  // eslint-disable-line react-hooks/exhaustive-deps
-  const errs = problems(f);
+  const errs = eventFormProblems(f);
   const bad = Object.keys(errs).length > 0;
   const save = useMutation({
     mutationFn: (action: "draft" | "publish") => (initial
@@ -52,26 +52,26 @@ export function EventForm({ visible, day, onClose, initial }: { visible: boolean
         <Button style={{ flex: 1 }} testID="event-publish" title="Publish" disabled={bad} loading={save.isPending && save.variables === "publish"} onPress={() => save.mutate("publish")} />
       </View>)
     }>
-      <Field testID="event-title-input" label="Title" value={f.title} onChangeText={(title) => setF({ ...f, title })} placeholder="e.g. Annual Day rehearsal" />
+      <Field testID="event-title-input" label="Title" value={f.title} onChangeText={(title) => setF((p) => ({ ...p, title }))} placeholder="e.g. Annual Day rehearsal" />
       {initial ? null : <View style={{ marginHorizontal: -spacing.lg }}>
-        <ChipRow testIDPrefix="event-cat" value={f.category} onChange={(category) => setF({ ...f, category })} options={CATS.map((c) => ({ value: c, label: label(c) }))} />
+        <ChipRow testIDPrefix="event-cat" value={f.category} onChange={(category) => setF((p) => ({ ...p, category }))} options={CATS.map((c) => ({ value: c, label: label(c) }))} />
       </View>}
       <View style={{ flexDirection: "row", gap: spacing.sm }}>
-        <View style={{ flex: 1 }}><DateField testID="event-start-input" label="Start date" value={f.start} error={errs.start} onChange={(start) => setF({ ...f, start })} /></View>
-        <View style={{ flex: 1 }}><DateField testID="event-end-input" label="End date" optional value={f.end} min={f.start} error={errs.end} onChange={(end) => setF({ ...f, end })} /></View>
+        <View style={{ flex: 1 }}><DateField testID="event-start-input" label="Start date" value={f.start} error={errs.start} onChange={(start) => setF((p) => ({ ...p, start }))} /></View>
+        <View style={{ flex: 1 }}><DateField testID="event-end-input" label="End date" optional value={f.end} min={f.start} error={errs.end} onChange={(end) => setF((p) => ({ ...p, end }))} /></View>
       </View>
       <View style={{ flexDirection: "row", gap: spacing.sm }}>
-        <View style={{ flex: 1 }}><TimeField testID="event-start-time-input" label="Start time" optional value={f.startTime} error={errs.startTime} onChange={(startTime) => setF({ ...f, startTime })} /></View>
-        <View style={{ flex: 1 }}><TimeField testID="event-end-time-input" label="End time" optional value={f.endTime} error={errs.endTime} onChange={(endTime) => setF({ ...f, endTime })} /></View>
+        <View style={{ flex: 1 }}><TimeField testID="event-start-time-input" label="Start time" optional value={f.startTime} error={errs.startTime} onChange={(startTime) => setF((p) => ({ ...p, startTime }))} /></View>
+        <View style={{ flex: 1 }}><TimeField testID="event-end-time-input" label="End time" optional value={f.endTime} error={errs.endTime} onChange={(endTime) => setF((p) => ({ ...p, endTime }))} /></View>
       </View>
-      <Field testID="event-location-input" label="Location (optional)" value={f.location} onChangeText={(location) => setF({ ...f, location })} placeholder="e.g. Auditorium" />
-      <Field testID="event-desc-input" label="Details (optional)" value={f.description} onChangeText={(description) => setF({ ...f, description })} multiline placeholder="What families should know" />
-      {initial ? null : <Segmented testIDPrefix="event-scope" value={f.scope} onChange={(scope) => setF({ ...f, scope })} options={[{ value: "school", label: "Whole school" }, { value: "sections", label: "Sections" }]} />}
+      <Field testID="event-location-input" label="Location (optional)" value={f.location} onChangeText={(location) => setF((p) => ({ ...p, location }))} placeholder="e.g. Auditorium" />
+      <Field testID="event-desc-input" label="Details (optional)" value={f.description} onChangeText={(description) => setF((p) => ({ ...p, description }))} multiline placeholder="What families should know" />
+      {initial ? null : <Segmented testIDPrefix="event-scope" value={f.scope} onChange={(scope) => setF((p) => ({ ...p, scope }))} options={[{ value: "school", label: "Whole school" }, { value: "sections", label: "Sections" }]} />}
       {!initial && f.scope === "sections" ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
           {(secs.data?.items ?? []).map((s) => {
             const on = f.sections.includes(s.section_id);
-            return <Button key={s.section_id} small variant={on ? "primary" : "outline"} testID={`event-sec-${s.section_id}`} title={s.label} onPress={() => setF({ ...f, sections: on ? f.sections.filter((x) => x !== s.section_id) : [...f.sections, s.section_id] })} />;
+            return <Button key={s.section_id} small variant={on ? "primary" : "outline"} testID={`event-sec-${s.section_id}`} title={s.label} onPress={() => setF((p) => ({ ...p, sections: on ? f.sections.filter((x) => x !== s.section_id) : [...f.sections, s.section_id] }))} />;
           })}
         </View>
       ) : null}
