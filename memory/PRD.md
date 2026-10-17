@@ -39,3 +39,9 @@ Expo (native + web) → FastAPI `/api` → MongoDB. See `/app/docs/ARCHITECTURE.
 - P1: Fees & receipts, admissions CRM, help desk, PTM
 - P2: AI teacher/info/owner briefing, transport & pickup, analytics, PWA/admissions site, custom domains, subscription billing, white-label builds
 - Hardening: distributed rate limit, refresh-token rotation, DPDP consent review, backups/restore drill, pen test
+
+## M2 Independent Audit Remediation (Oct 2026) — DONE
+- Tokenless downloads (web: header fetch→blob; native: one-time 60s grants, hashed, re-authorised, log-redacted); `?token=` removed server-wide
+- Document-level file ACL (backend/file_access.py), atomic timetable clash unique indexes, GitHub Actions CI (.github/workflows/ci.yml) + dependabot
+- Backend 102 passed / 0 failed / 1 skipped (+ restart test 1 passed separately); jest 26; branch milestone-2-audit-remediation @ 986954c. Docs: /app/docs/M2_AUDIT_REMEDIATION.md
+- Next: Milestone 3 Parent Connect (scope to confirm)
